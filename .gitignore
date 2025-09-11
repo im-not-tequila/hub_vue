@@ -1,0 +1,71 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Build output
+dist/
+build/
+*.local
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.cache/
+vite.config.ts.timestamp-*
+vite.cache/
+.vite/
+
+# Coverage
+coverage/
+*.lcov
+
+# Testing
+/jest-cache/
+/jest-dist/
+/jest-report/
+jest-debug.log
+
+# VSCode extensions
+.history/
+
+# Backup files
+*.bak
+*.tmp
+
+# Local test files
+test.html
+
+# Tailwind CSS cache
+.tailwindcss/
+
+# Generated assets
+*.min.js
+*.min.css
