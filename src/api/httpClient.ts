@@ -37,6 +37,21 @@ httpClient.interceptors.response.use(
         const userStore = useUserStore()
         const originalRequest = error.config
 
+        if (
+            error.response?.status === 401 &&
+            !error.config._retry &&
+            !error.config.url.includes('/auth/')
+        ) {
+            // Помечаем, что уже пытались обновить токен
+            error.config._retry = true
+
+            const { data } = await httpClient.post<{ token: string }>('/auth/refresh')
+            userStore.setToken(data.token)
+            originalRequest.headers.Authorization = `Bearer ${data.token}`
+            processQueue(null, data.token)
+            return httpClient(originalRequest)
+        }
+
         if (error.response?.status === 401) {
             if (originalRequest._retry) {
                 return Promise.reject(error)
