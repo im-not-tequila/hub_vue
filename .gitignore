@@ -69,3 +69,5 @@ test.html
 # Generated assets
 *.min.js
 *.min.css
+.env.development
+.env.production

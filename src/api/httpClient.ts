@@ -17,22 +17,58 @@ httpClient.interceptors.request.use((config) => {
     return config
 })
 
+let refreshInProgress = false
+let failedQueue: any[] = []
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error)
+        } else {
+            prom.resolve(token)
+        }
+    })
+    failedQueue = []
+}
+
 httpClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const userStore = useUserStore()
+        const originalRequest = error.config
 
-        if (error.response?.status === 401 && !error.config._retry) {
-            error.config._retry = true
+        if (error.response?.status === 401) {
+            if (originalRequest._retry) {
+                return Promise.reject(error)
+            }
+
+            if (refreshInProgress) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject })
+                })
+                    .then(token => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`
+                        return httpClient(originalRequest)
+                    })
+                    .catch(err => Promise.reject(err))
+            }
+
+            originalRequest._retry = true
+            refreshInProgress = true
+
             try {
                 const { data } = await httpClient.post<{ token: string }>('/auth/refresh')
                 userStore.setToken(data.token)
-                error.config.headers.Authorization = `Bearer ${data.token}`
-                return httpClient(error.config) // повторяем запрос
+                originalRequest.headers.Authorization = `Bearer ${data.token}`
+                processQueue(null, data.token)
+                return httpClient(originalRequest)
             } catch (refreshError) {
+                processQueue(refreshError, null)
                 userStore.clearToken()
                 userStore.clearUser()
                 return Promise.reject(refreshError)
+            } finally {
+                refreshInProgress = false
             }
         }
 
