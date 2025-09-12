@@ -241,6 +241,11 @@ const menuGroups = [
         name: "Документы",
         path: "/docs",
       },
+      // {
+      //   icon: UserCircleIcon,
+      //   name: "Тестовая страница",
+      //   path: "/test",
+      // }
     ],
   },
 ];

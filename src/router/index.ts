@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore'
 
 const HomeView = () => import('@/views/HomeView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
+const TestView = () => import('@/views/TestView.vue')
 
 const routes = [
     { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true } },
@@ -18,6 +19,7 @@ const routes = [
         }
         },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
+    { path: '/test', name: 'test', component: TestView, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

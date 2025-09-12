@@ -39,10 +39,9 @@ httpClient.interceptors.response.use(
                 const newAccessToken = await refreshToken();
                 userStore.setToken(newAccessToken);
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return httpClient(originalRequest); // повторяем запрос
+                return httpClient(originalRequest);
             } catch (err) {
-                userStore.clearToken()
-                userStore.clearUser()// refresh тоже не сработал
+                userStore.logout();
                 return Promise.reject(err);
             }
         }

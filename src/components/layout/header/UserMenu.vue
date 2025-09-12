@@ -8,7 +8,7 @@
         <img src="@/assets/owner.jpg" alt="User" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Musharof </span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -20,10 +20,10 @@
     >
       <div>
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Musharof Chowdhury
+          {{ user.lastname }} {{ user.firstname }} {{ user.patronymic }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          randomuser@pimjo.com
+<!--          randomuser@pimjo.com-->
         </span>
       </div>
 
@@ -43,32 +43,44 @@
         </li>
       </ul>
       <router-link
-        to="/signin"
+        to="/login"
         @click="signOut"
         class="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
       >
         <LogoutIcon
           class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
         />
-        Sign out
+        Выйти
       </router-link>
     </div>
     <!-- Dropdown End -->
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/components/icons'
-import { RouterLink } from 'vue-router'
-import { ref, onMounted, onUnmounted } from 'vue'
+import {RouterLink, useRouter} from 'vue-router'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useUserStore } from "@/stores/userStore.js";
+import { User } from "@/types/user.js";
+
+
+// const router = useRouter()
+
+const props = defineProps<{
+  user?: User
+}>()
+
+const userStore = useUserStore()
+const user = computed(() => props.user ?? userStore.user ?? null)
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
 const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
-  { href: '/chat', icon: SettingsIcon, text: 'Account settings' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
+  { href: '/profile', icon: UserCircleIcon, text: 'Профиль' },
+  { href: '/chat', icon: SettingsIcon, text: 'Настройки' },
+  { href: '/profile', icon: InfoCircleIcon, text: 'Помощь' },
 ]
 
 const toggleDropdown = () => {
@@ -80,8 +92,7 @@ const closeDropdown = () => {
 }
 
 const signOut = () => {
-  // Implement sign out logic here
-  console.log('Signing out...')
+  userStore.logout()
   closeDropdown()
 }
 
@@ -90,6 +101,8 @@ const handleClickOutside = (event) => {
     closeDropdown()
   }
 }
+
+
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)

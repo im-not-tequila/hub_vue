@@ -48,6 +48,11 @@ export const useUserStore = defineStore('user', {
 
         clearUser() {
             this.user = null
+        },
+
+        logout() {
+            this.clearUser()
+            this.clearToken()
         }
 
     }
