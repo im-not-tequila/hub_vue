@@ -17,79 +17,38 @@ httpClient.interceptors.request.use((config) => {
     return config
 })
 
-let refreshInProgress = false
-let failedQueue: any[] = []
-
-const processQueue = (error: any, token: string | null = null) => {
-    failedQueue.forEach(prom => {
-        if (error) {
-            prom.reject(error)
-        } else {
-            prom.resolve(token)
-        }
-    })
-    failedQueue = []
+async function refreshToken() {
+    const { data } = await httpClient.post<{ access_token: string, token_type: string }>('/auth/refresh')
+    return data.access_token;
 }
 
 httpClient.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const userStore = useUserStore()
-        const originalRequest = error.config
+        const userStore = useUserStore();
+        const originalRequest = error.config;
 
+        // Если это 401 и не попытка refresh или auth
         if (
             error.response?.status === 401 &&
-            !error.config._retry &&
-            !error.config.url.includes('/auth/')
+            !originalRequest._retry &&
+            !originalRequest.url.includes("/auth/")
         ) {
-            // Помечаем, что уже пытались обновить токен
-            error.config._retry = true
-
-            const { data } = await httpClient.post<{ token: string }>('/auth/refresh')
-            userStore.setToken(data.token)
-            originalRequest.headers.Authorization = `Bearer ${data.token}`
-            processQueue(null, data.token)
-            return httpClient(originalRequest)
-        }
-
-        if (error.response?.status === 401) {
-            if (originalRequest._retry) {
-                return Promise.reject(error)
-            }
-
-            if (refreshInProgress) {
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject })
-                })
-                    .then(token => {
-                        originalRequest.headers.Authorization = `Bearer ${token}`
-                        return httpClient(originalRequest)
-                    })
-                    .catch(err => Promise.reject(err))
-            }
-
-            originalRequest._retry = true
-            refreshInProgress = true
-
+            originalRequest._retry = true;
             try {
-                const { data } = await httpClient.post<{ token: string }>('/auth/refresh')
-                userStore.setToken(data.token)
-                originalRequest.headers.Authorization = `Bearer ${data.token}`
-                processQueue(null, data.token)
-                return httpClient(originalRequest)
-            } catch (refreshError) {
-                processQueue(refreshError, null)
+                const newAccessToken = await refreshToken();
+                userStore.setToken(newAccessToken);
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                return httpClient(originalRequest); // повторяем запрос
+            } catch (err) {
                 userStore.clearToken()
-                userStore.clearUser()
-                return Promise.reject(refreshError)
-            } finally {
-                refreshInProgress = false
+                userStore.clearUser()// refresh тоже не сработал
+                return Promise.reject(err);
             }
         }
-
-        return Promise.reject(error)
+        return Promise.reject(error);
     }
-)
+);
 
 httpClient.interceptors.response.use(
     (response) => response,
