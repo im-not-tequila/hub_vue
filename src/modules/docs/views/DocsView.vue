@@ -1,44 +1,14 @@
 <template>
-
-
   <admin-layout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
+    <CreateDocView
+        :modalIsOpen="modalIsOpen"
+        @close="modalIsOpen = false"
 
-    <Modal v-if="createModalIsOpen" title="Новый документ">
-      <template #body>
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <ComponentCard
-                v-for="cat in docCategories"
-                :key="cat.title"
-                :title="cat.title"
-                className="h-full"
-            >
-              <ul class="space-y-1">
-                <li v-for="item in cat.items" :key="item.key">
-                  <button
-                      type="button"
-                      class="w-full text-left rounded-md px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
-                      @click="onPickTemplate(item)"
-                  >
-                    {{ item.label }}
-                  </button>
-                </li>
-              </ul>
-            </ComponentCard>
-          </div>
-          <div class="mt-6">
-            <button
-                @click="closeModal"
-                class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
-            >
-              Закрыть
-            </button>
-          </div>
-      </template>
-    </Modal>
+    />
 
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard>
+      <ComponentCard :collapsible="false">
         <template #header>
           <div class="flex items-center justify-between gap-3">
 
@@ -71,7 +41,7 @@
                 :start-icon="PlusIcon"
                 :variant="'primaryGreen'"
                 :disabled=false
-                @click="createModalIsOpen=true"
+                @click="createDocumentClick()"
             >
               Создать
             </BaseButton>
@@ -96,9 +66,8 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import BasicTableOne from '@/components/tables/basic-tables/BasicTableOne.vue'
 import BaseButton from "@/components/ui/BaseButton.vue";
-import BaseInput from "@/components/ui/BaseInput.vue";
 import { PlusIcon } from "@/components/icons";
-import Modal from '@/components/ui/Modal.vue'
+import CreateDocView from "@/modules/docs/views/CreateDocView.vue";
 
 
 interface SenderUser {
@@ -106,13 +75,16 @@ interface SenderUser {
   role: string
   avatar: string
 }
+
 type DocumentStatus = 'На согласовании' | 'Подписано' | 'Отказано'
+
 interface RecipientUser {
   name: string
   role: string
   avatar: string
   status: DocumentStatus
 }
+
 interface Document {
   id: number
   name: string
@@ -122,72 +94,21 @@ interface Document {
   date: string
   status: DocumentStatus
 }
-// ... existing code ...
+
 const currentPageTitle = ref('Документы')
 const activeTab = ref<'incoming' | 'outgoing'>('incoming')
-const createModalIsOpen = ref(false)
+const modalIsOpen = ref(false)
 
-// Категории и пункты для интерфейса выбора шаблона
-type TemplateItem = { key: string; label: string }
-type TemplateCategory = { title: string; items: TemplateItem[] }
+// function onPickTemplate(item: { key: string; label: string }) {
+//   console.log('Выбран шаблон:', item.key)
+//   modalIsOpen.value = false
+//   // Здесь можно открыть страницу с формой или вызвать API
+// }
 
-const docCategories = ref<TemplateCategory[]>([
-  {
-    title: 'Документы управления',
-    items: [
-      { key: 'service-note', label: 'Служебная записка' },
-      { key: 'timesheet', label: 'Табель' },
-      { key: 'job-confirmation', label: 'Справка о подтверждении места работы' },
-      { key: 'tmc-move-request', label: 'Заявка на перемещение ТМЦ/ОС' },
-    ],
-  },
-  // {
-  //   title: 'Заявления',
-  //   items: [
-  //     { key: 'vacation', label: 'Трудовой / экологический отпуск' },
-  //     { key: 'business-trip', label: 'Командировка' },
-  //     { key: 'material-help', label: 'Материальная помощь' },
-  //     { key: 'salary-certificate', label: 'Справка о заработной плате' },
-  //     { key: 'unpaid-leave', label: 'Отпуск без содержания' },
-  //     { key: 'social-leave', label: 'Социальный отпуск' },
-  //     { key: 'return-after-childcare', label: 'Выход на работу после отпуска по уходу' },
-  //     { key: 'extend-contract', label: 'Продление трудового договора' },
-  //     { key: 'transfer', label: 'Перевод' },
-  //     { key: 'requalification', label: 'Переоформление ТА' },
-  //     { key: 'concurrent-employment', label: 'Разрешение на совместительство' },
-  //     { key: 'combine-positions', label: 'Снятие совмещения' },
-  //   ],
-  // },
-  {
-    title: 'Бухгалтерия',
-    items: [
-      { key: 'tmc-request-warehouse', label: 'Заявка ОС/ТМЦ со склада' },
-      { key: 'asset-move', label: 'Накладная на перемещение ОС' },
-      { key: 'writeoff-conclusion', label: 'Заключение на списание ТМП и ОС' },
-      { key: 'writeoff-act', label: 'Акт списания' },
-      { key: 'stocks-move', label: 'Накладная на перемещение запасов' },
-    ],
-  },
-  {
-    title: 'Общее',
-    items: [
-      { key: 'generic-doc', label: 'Документ' },
-    ],
-  },
-  {
-    title: 'Обходной лист',
-    items: [
-      { key: 'obl', label: 'Обходной лист (МОП)' },
-    ],
-  },
-])
-
-// Хелпер для картинок (если храните в src/assets)
 function avatarUrl(fileName: string) {
   return new URL(`../../../assets/images/user/${fileName}`, import.meta.url).href
 }
 
-// Демо-данные вкладок
 const incoming = ref<Document[]>([
   {
     id: 101,
@@ -253,18 +174,6 @@ const outgoing = ref<Document[]>([
 
 const currentDocs = computed(() => (activeTab.value === 'incoming' ? incoming.value : outgoing.value))
 
-const closeModal = () => {
-  createModalIsOpen.value = false
-  // resetModalFields()
-}
-
-// Обработчик клика по пункту шаблона
-function onPickTemplate(item: TemplateItem) {
-  console.log('pick template:', item.key)
-  // здесь можно вызвать роутер/создание черновика
-  closeModal()
-}
-
 function viewDocument(doc: Document) {
   console.log('view', doc.id)
 }
@@ -280,4 +189,9 @@ function deleteDocument(id: number) {
     outgoing.value = outgoing.value.filter(d => d.id !== id)
   }
 }
+
+function createDocumentClick() {
+  modalIsOpen.value = true
+}
+
 </script>

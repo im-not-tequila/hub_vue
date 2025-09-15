@@ -8,7 +8,7 @@
         <img src="@/assets/owner.jpg" alt="User" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
+      <span v-if="user" class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -19,7 +19,7 @@
       class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
     >
       <div>
-        <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
+        <span v-if="user" class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
           {{ user.lastname }} {{ user.firstname }} {{ user.patronymic }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
@@ -75,7 +75,7 @@ const userStore = useUserStore()
 const user = computed(() => props.user ?? userStore.user ?? null)
 
 const dropdownOpen = ref(false)
-const dropdownRef = ref(null)
+const dropdownRef = ref<HTMLElement | null>(null)
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Профиль' },
@@ -96,13 +96,11 @@ const signOut = () => {
   closeDropdown()
 }
 
-const handleClickOutside = (event) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && event.target instanceof Node && !dropdownRef.value.contains(event.target)) {
     closeDropdown()
   }
 }
-
-
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -111,4 +109,5 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
 </script>

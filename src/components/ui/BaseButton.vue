@@ -2,7 +2,7 @@
   <button
     :type="type"
     :class="[
-      'inline-flex items-center justify-center font-semibold gap-2 rounded-lg transition',
+      'inline-flex items-center justify-center font-medium gap-2 rounded-lg transition',
       sizeClasses[size],
       variantClasses[variant],
       className,
@@ -26,7 +26,7 @@
 
 type ButtonType = 'button' | 'submit' | 'reset'
 type ButtonSize = 'sm' | 'md' | 'lg'
-type ButtonVariant = 'primaryBlue' | 'outlineBlue' | 'primaryGreen' | 'outlineGreen'
+type ButtonVariant = 'primaryBlue' | 'outline' | 'primaryGreen' | 'outlineGreen'
 
 interface ButtonProps {
   type?: ButtonType
@@ -54,8 +54,9 @@ const sizeClasses = {
 
 const variantClasses = {
   primaryBlue: 'bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300',
-  outlineBlue:
-    'bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300',
+  outline:
+    'rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 ' +
+      'dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]',
   primaryGreen: 'bg-green-500 text-white shadow-theme-xs hover:bg-green-600 disabled:bg-green-300',
   outlineGreen:
       'bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300',

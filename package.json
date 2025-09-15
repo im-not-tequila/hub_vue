@@ -16,6 +16,7 @@
     "axios": "^1.11.0",
     "flatpickr": "^4.6.13",
     "jsvectormap": "^1.7.0",
+    "masonry-layout": "^4.2.2",
     "pinia": "^3.0.3",
     "swiper": "^11.2.10",
     "vue": "^3.5.18",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
+    "@types/masonry-layout": "^4.2.8",
     "@types/node": "^24.3.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "autoprefixer": "^10.4.21",
