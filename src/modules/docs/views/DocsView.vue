@@ -2,7 +2,7 @@
   <admin-layout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <CreateDocView
-        :modalIsOpen="modalIsOpen"
+        :modelValue="modalIsOpen"
         @close="modalIsOpen = false"
 
     />

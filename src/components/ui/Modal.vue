@@ -1,54 +1,61 @@
 <template>
-  <div class="fixed inset-0 flex items-center justify-center overflow-y-auto z-99999">
+  <div v-if="modelValue" class="fixed inset-0 flex items-center justify-center overflow-y-auto z-99999">
     <!-- Оверлей -->
     <div
         class="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px] z-40"
         aria-hidden="true"
-        @click.self="$emit('close')"
+        @click.self="close"
     ></div>
+      <div class="fixed inset-0 flex items-center justify-center z-50">
+        <div
+            v-if="modelValue"
+            :class="[
+        'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 w-auto max-w-[90%] max-h-[90vh] flex flex-col',
+        className,
+      ]"
+        >
+          <!-- Заголовок (фиксированная часть) -->
+          <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
+            <slot name="header">
+              <h3 class="mb-2 font-semibold text-gray-800 text-theme-xl dark:text-white/90 lg:text-2xl">
+                {{ title }}
+              </h3>
+              <p v-if="desc" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ desc }}
+              </p>
+            </slot>
+          </div>
 
-    <!-- Модалка -->
-    <div class="fixed inset-0 flex items-center justify-center z-50">
-      <div
-          :class="[
-      'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 w-auto max-w-[90%] max-h-[90vh] flex flex-col',
-      className,
-    ]"
-      >
-        <!-- Заголовок (фиксированная часть) -->
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
-          <slot name="header">
-            <h3 class="mb-2 font-semibold text-gray-800 text-theme-xl dark:text-white/90 lg:text-2xl">
-              {{ title }}
-            </h3>
-            <p v-if="desc" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {{ desc }}
-            </p>
-          </slot>
-        </div>
+          <!-- Контент (прокручиваемая часть) -->
+          <div class="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
+            <slot name="body"></slot>
+          </div>
 
-        <!-- Контент (прокручиваемая часть) -->
-        <div class="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1">
-          <slot name="body"></slot>
-        </div>
-
-        <!-- Футер (фиксированная часть) -->
-        <div class="px-6 py-5 border-t border-gray-100 dark:border-gray-800 shrink-0">
-          <slot name="footer"></slot>
+          <!-- Футер (фиксированная часть) -->
+          <div class="px-6 py-5 border-t border-gray-100 dark:border-gray-800 shrink-0">
+            <slot name="footer"></slot>
+          </div>
         </div>
       </div>
-    </div>
   </div>
+
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 
-interface Props {
-  title?: string
-  className?: string
-  desc?: string
+const props = defineProps({
+  modelValue: { type: Boolean, required: true }, // v-model
+  title: String,
+  desc: String,
+  className: String,
+})
+
+const emit = defineEmits(['update:modelValue', 'close'])
+
+function close() {
+  emit('update:modelValue', false) // стандарт для v-model
+  emit('close')
 }
-
-defineProps<Props>()
 </script>
+

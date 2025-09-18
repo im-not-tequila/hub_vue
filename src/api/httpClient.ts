@@ -18,7 +18,7 @@ httpClient.interceptors.request.use((config) => {
 })
 
 async function refreshToken() {
-    const { data } = await httpClient.post<{ access_token: string, token_type: string }>('/auth/refresh')
+    const { data } = await httpClient.post<{ access_token: string, token_type: string }>('/auth/refresh_token')
     return data.access_token;
 }
 

@@ -13,13 +13,15 @@
     <!-- Основная зона -->
     <div
         @click="toggleDropdown"
-        class="relative flex items-center border rounded-lg shadow-theme-xs transition duration-150 ease-in-out cursor-pointer"
+        class="relative flex flex-wrap items-start border rounded-lg shadow-theme-xs transition duration-150 ease-in-out cursor-pointer"
         :class="[
-        selectClasses,
-        { 'pl-10': $slots.prefix }
-      ]"
+          selectClasses,
+          'h-auto',
+          { 'pl-10': $slots.prefix }
+        ]"
     >
-      <!-- Префикс -->
+
+    <!-- Префикс -->
       <span
           v-if="$slots.prefix"
           class="absolute left-3 flex items-center text-gray-500 dark:text-gray-400"
@@ -28,7 +30,7 @@
       </span>
 
       <!-- Placeholder или выбранные элементы -->
-      <div class="flex flex-wrap items-center flex-auto gap-2 overflow-hidden">
+      <div class="flex flex-wrap items-center flex-auto gap-2 min-h-[40px] p-2">
         <span v-if="selectedItems.length === 0" class="text-gray-400">
           {{ placeholder || 'Select options...' }}
         </span>
@@ -39,7 +41,8 @@
             :key="item.value"
             class="group flex items-center justify-center h-[30px] rounded-full border border-transparent bg-gray-100 py-1 pl-2.5 pr-2 text-sm text-gray-800 dark:bg-gray-800 dark:text-white/90 hover:border-gray-200 dark:hover:border-gray-700"
         >
-          <span>{{ item.label }}</span>
+          <span class="truncate max-w-[14vw] block">{{ item.label }}</span>
+
           <button
               @click.stop="removeItem(item)"
               class="pl-2 text-gray-500 cursor-pointer group-hover:text-gray-400 dark:text-gray-400"
@@ -152,7 +155,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, type Ref } from 'vue'
 
-type MultiSelectOption = {
+export type MultiSelectOption = {
   value: string | number
   label: string
 }
@@ -199,11 +202,11 @@ const selectId = computed(() => `multi-select-${uid}`)
 const sizeClass = computed(() => {
   switch (props.size) {
     case 'sm':
-      return 'h-9 text-sm px-3 rounded-md'
+      return 'text-sm px-3 rounded-md'
     case 'lg':
-      return 'h-12 text-base px-4 rounded-lg'
+      return 'text-base px-4 rounded-lg'
     default: // md
-      return 'h-11 text-sm px-4 rounded-lg'
+      return 'text-sm px-4 rounded-lg'
   }
 })
 
