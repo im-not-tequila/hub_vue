@@ -4,7 +4,14 @@
     <CreateDocView
         :modelValue="modalIsOpen"
         @close="modalIsOpen = false"
+        @submitted="refreshData"
+    />
 
+    <ShowPdfView
+        :modelValue="showDocumentModalIsOpen"
+        :doc="selectedDoc"
+        :role="roleForView"
+        @close="showDocumentModalIsOpen = false"
     />
 
     <div class="space-y-5 sm:space-y-6">
@@ -35,6 +42,28 @@
                 Исходящие
               </button>
 
+              <button
+                  type="button"
+                  class="px-3 py-1.5 text-sm rounded-md transition"
+                  :class="activeTab === 'pendingExecution'
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'"
+                  @click="activeTab = 'pendingExecution'"
+              >
+                На исполнении
+              </button>
+
+              <button
+                  type="button"
+                  class="px-3 py-1.5 text-sm rounded-md transition"
+                  :class="activeTab === 'executed'
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'"
+                  @click="activeTab = 'executed'"
+              >
+                Исполненные
+              </button>
+
             </div>
             <BaseButton
                 :size="'sm'"
@@ -48,138 +77,181 @@
           </div>
         </template>
 
-        <BasicTableOne
-            :docs="currentDocs"
+        <TableView
+            v-if="(activeTab === 'incoming') && incoming.length !== 0"
+            :docs="incoming"
             @view="viewDocument"
             @download="downloadDocument"
             @delete="deleteDocument"
         />
+
+        <TableView
+            v-else-if="(activeTab === 'outgoing') && outgoing.length !== 0"
+            :docs="outgoing"
+            @view="viewDocument"
+            @download="downloadDocument"
+            @delete="deleteDocument"
+        />
+
+        <TableView
+            v-else-if="(activeTab === 'pendingExecution') && pendingExecution.length !== 0"
+            :docs="pendingExecution"
+            @view="viewDocument"
+            @download="downloadDocument"
+            @delete="deleteDocument"
+        />
+
+        <TableView
+            v-else-if="(activeTab === 'executed') && executed.length !== 0"
+            :docs="executed"
+            @view="viewDocument"
+            @download="downloadDocument"
+            @delete="deleteDocument"
+        />
+
+
+        <div v-else class="flex items-center justify-center h-64">
+
+          <div class="mx-auto w-full max-w-[630px] text-center">
+
+            <h3
+                class="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
+            >
+              <span v-if="activeTab === 'incoming'">
+                Нет входящих документов
+              </span>
+
+              <span v-else-if="activeTab === 'outgoing'">
+                Нет исходящих документов
+              </span>
+
+              <span v-else-if="activeTab === 'pendingExecution'">
+                Нет документов на исполнении
+              </span>
+
+              <span v-else>
+                Нет исполненных документов
+              </span>
+            </h3>
+
+            <p class="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
+              <span v-if="activeTab === 'incoming'">
+                У вас пока нет входящих документов. Новые документы от других пользователей будут отображаться здесь.
+              </span>
+
+              <span v-else-if="activeTab === 'outgoing'">
+                У вас пока нет исходящих документов. Как только вы создадите или отправите документ, он появится в этом разделе.
+              </span>
+
+              <span v-else-if="activeTab === 'pendingExecution'">
+                У вас пока нет документов на исполнении. Как только вам отправят документ на исполнение, он появится в этом разделе.
+              </span>
+
+              <span v-else>
+                У вас пока нет исполненных документов. Как только вы исполните какой-либо документ, он появится в этом разделе.
+              </span>
+            </p>
+
+          </div>
+
+        </div>
+
       </ComponentCard>
     </div>
   </admin-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import ComponentCard from '@/components/common/ComponentCard.vue'
-import BasicTableOne from '@/components/tables/basic-tables/BasicTableOne.vue'
+import {
+  ref,
+  onMounted, computed
+} from 'vue'
+
+import AdminLayout from '@/components/layout/AdminLayout.vue';
+import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
+import ComponentCard from '@/components/common/ComponentCard.vue';
 import BaseButton from "@/components/ui/BaseButton.vue";
 import { PlusIcon } from "@/components/icons";
+
 import CreateDocView from "@/modules/docs/views/CreateDocView.vue";
+import TableView from "@/modules/docs/views/TableView.vue";
+import ShowPdfView from "@/modules/docs/views/ShowPdfView.vue";
+import { IncomingResponse, OutgoingResponse } from "@/modules/docs/types/response";
+import {
+  documentExecuted,
+  documentIncoming,
+  documentOutgoings,
+  documentPdf,
+  documentPendingExecution
+} from "@/modules/docs/api/docs.api";
+
+import {useUserStore} from "@/stores/userStore";
 
 
-interface SenderUser {
-  name: string
-  role: string
-  avatar: string
-}
-
-type DocumentStatus = 'На согласовании' | 'Подписано' | 'Отказано'
-
-interface RecipientUser {
-  name: string
-  role: string
-  avatar: string
-  status: DocumentStatus
-}
-
-interface Document {
-  id: number
-  name: string
-  sender: SenderUser
-  recipient: RecipientUser
-  agreement: RecipientUser[]
-  date: string
-  status: DocumentStatus
-}
-
+const userStore = useUserStore()
 const currentPageTitle = ref('Документы')
-const activeTab = ref<'incoming' | 'outgoing'>('incoming')
+const activeTab = ref<'incoming' | 'outgoing' | 'pendingExecution' | 'executed'>('incoming')
 const modalIsOpen = ref(false)
+const showDocumentModalIsOpen = ref(false)
 
-// function onPickTemplate(item: { key: string; label: string }) {
-//   console.log('Выбран шаблон:', item.key)
-//   modalIsOpen.value = false
-//   // Здесь можно открыть страницу с формой или вызвать API
-// }
+const incoming = ref<IncomingResponse[]>([])
+const outgoing = ref<OutgoingResponse[]>([])
+const pendingExecution = ref<OutgoingResponse[]>([])
+const executed = ref<OutgoingResponse[]>([])
 
-function avatarUrl(fileName: string) {
-  return new URL(`../../../assets/images/user/${fileName}`, import.meta.url).href
+const selectedDoc = ref<IncomingResponse | OutgoingResponse | null>(null)
+const roleForView = computed(() => {
+  if (activeTab.value === 'outgoing') {
+    return 'author'
+  }
+
+  if (selectedDoc.value?.recipient.id !== userStore.user?.id){ return 'approver' }
+
+  return 'recipient'
+})
+
+onMounted(async () => {
+  await refreshData()
+})
+
+async function refreshData() {
+  const inResponse = await documentIncoming()
+  const outResponse = await documentOutgoings()
+  const pendingExecutionResponse = await documentPendingExecution()
+  const executedResponse = await documentExecuted()
+
+  incoming.value = inResponse.data
+  outgoing.value = outResponse.data
+  pendingExecution.value = pendingExecutionResponse.data
+  executed.value = executedResponse.data
 }
 
-const incoming = ref<Document[]>([
-  {
-    id: 101,
-    name: 'Приказ о зачислении',
-    sender: { name: 'Деканат', role: 'Отдел', avatar: avatarUrl('user-24.jpg') },
-    recipient: { name: 'Иван Петров', role: 'Студент', avatar: avatarUrl('user-18.jpg'), status: 'На согласовании' },
-    agreement: [
-      { name: 'Секретарь', role: 'Отдел кадров', avatar: avatarUrl('user-22.jpg'), status: 'Подписано' },
-    ],
-    date: '2025-09-02',
-    status: 'На согласовании',
-  },
-  {
-    id: 102,
-    name: 'Извещение о задолженности',
-    sender: { name: 'Бухгалтерия', role: 'Отдел', avatar: avatarUrl('user-23.jpg') },
-    recipient: { name: 'Иван Петров', role: 'Студент', avatar: avatarUrl('user-18.jpg'), status: 'Подписано' },
-    agreement: [
-      { name: 'Куратор', role: 'Факультет', avatar: avatarUrl('user-27.jpg'), status: 'Подписано' },
-    ],
-    date: '2025-09-05',
-    status: 'Подписано',
-  },
-])
-
-const outgoing = ref<Document[]>([
-  {
-    id: 1,
-    name: 'Акт приема-передачи',
-    sender: { name: 'Иванов Иван', role: 'Менеджер', avatar: avatarUrl('user-17.jpg') },
-    recipient: { name: 'Петров Пётр', role: 'Юрист', avatar: avatarUrl('user-18.jpg'), status: 'На согласовании' },
-    agreement: [
-      { name: 'Семенов С.', role: 'Фин. отдел', avatar: avatarUrl('user-22.jpg'), status: 'Подписано' },
-      { name: 'Сидорова А.', role: 'Бухгалтер', avatar: avatarUrl('user-23.jpg'), status: 'На согласовании' },
-    ],
-    date: '2025-09-01',
-    status: 'На согласовании',
-  },
-  {
-    id: 2,
-    name: 'Заявка на отпуск',
-    sender: { name: 'Смирнов С.', role: 'Сотрудник', avatar: avatarUrl('user-19.jpg') },
-    recipient: { name: 'HR Отдел', role: 'HR', avatar: avatarUrl('user-20.jpg'), status: 'Подписано' },
-    agreement: [
-      { name: 'Руководитель', role: 'Руководитель', avatar: avatarUrl('user-24.jpg'), status: 'Подписано' },
-    ],
-    date: '2025-09-02',
-    status: 'Подписано',
-  },
-  {
-    id: 3,
-    name: 'Отчет по проекту',
-    sender: { name: 'Команда А', role: 'Отдел разработки', avatar: avatarUrl('user-21.jpg') },
-    recipient: { name: 'Директор', role: 'Директор', avatar: avatarUrl('user-25.jpg'), status: 'На согласовании' },
-    agreement: [
-      { name: 'QA', role: 'Тестирование', avatar: avatarUrl('user-26.jpg'), status: 'Отказано' },
-      { name: 'Аналитик', role: 'BA', avatar: avatarUrl('user-27.jpg'), status: 'Подписано' },
-    ],
-    date: '2025-09-03',
-    status: 'Отказано',
-  },
-])
-
-const currentDocs = computed(() => (activeTab.value === 'incoming' ? incoming.value : outgoing.value))
-
-function viewDocument(doc: Document) {
-  console.log('view', doc.id)
+function viewDocument(doc: IncomingResponse | OutgoingResponse) {
+  selectedDoc.value = doc
+  showDocumentModalIsOpen.value = true
 }
 
-function downloadDocument(doc: Document) {
-  console.log('download', doc.id)
+async function downloadDocument(doc: IncomingResponse | OutgoingResponse) {
+  if (!doc?.id) return;
+
+  try {
+    const response = await documentPdf(doc?.id);
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = doc.name ? `${doc.name}.pdf` : 'document.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Освобождаем память
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Ошибка при скачивании PDF:', error);
+  }
 }
 
 function deleteDocument(id: number) {

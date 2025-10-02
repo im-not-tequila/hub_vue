@@ -1,5 +1,5 @@
 import { allTutorsWithPosition } from '../api/docs.api'
-import { TutorWithPosition } from '../types/docs'
+import { TutorWithPosition } from '../types/doc'
 
 export const loadTutorsWithPositionOptions = async () => {
     try {

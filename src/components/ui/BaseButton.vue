@@ -26,7 +26,7 @@
 
 type ButtonType = 'button' | 'submit' | 'reset'
 type ButtonSize = 'sm' | 'md' | 'lg'
-type ButtonVariant = 'primaryBlue' | 'outline' | 'primaryGreen' | 'outlineGreen'
+type ButtonVariant = 'primaryBlue' | 'outline' | 'primaryGreen' | 'outlineGreen' | 'primaryRed'
 
 interface ButtonProps {
   type?: ButtonType
@@ -54,9 +54,10 @@ const sizeClasses = {
 
 const variantClasses = {
   primaryBlue: 'bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300',
+  primaryRed: 'bg-red-500 text-white shadow-theme-xs hover:bg-red-600 disabled:bg-red-300',
   outline:
-    'rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 ' +
-      'dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]',
+    'rounded-lg border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-50 ' +
+      'dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-white/[0.03]',
   primaryGreen: 'bg-green-500 text-white shadow-theme-xs hover:bg-green-600 disabled:bg-green-300',
   outlineGreen:
       'bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300',

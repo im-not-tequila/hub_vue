@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="@/assets/owner.jpg" alt="User" />
+        <img src="@/assets/images/user/no_userpic.jpg" alt="User" />
       </span>
 
       <span v-if="user" class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>

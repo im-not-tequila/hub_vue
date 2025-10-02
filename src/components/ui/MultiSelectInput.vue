@@ -13,7 +13,7 @@
     <!-- Основная зона -->
     <div
         @click="toggleDropdown"
-        class="relative flex flex-wrap items-start border rounded-lg shadow-theme-xs transition duration-150 ease-in-out cursor-pointer"
+        class="relative flex flex-wrap items-start border rounded-lg shadow-theme-xs transition duration-150 ease-in-out cursor-pointer p-2"
         :class="[
           selectClasses,
           'h-auto',
@@ -30,8 +30,8 @@
       </span>
 
       <!-- Placeholder или выбранные элементы -->
-      <div class="flex flex-wrap items-center flex-auto gap-2 min-h-[40px] p-2">
-        <span v-if="selectedItems.length === 0" class="text-gray-400">
+      <div class="flex flex-wrap items-center flex-auto gap-2 min-h-[40px]">
+        <span v-if="selectedItems.length === 0" class="text-gray-400 dark:text-white/30">
           {{ placeholder || 'Select options...' }}
         </span>
 
@@ -68,37 +68,40 @@
       </div>
 
       <!-- Кнопка очистки -->
-      <span
-          v-if="clearable && !disabled && selectedItems.length > 0"
-          class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-8 top-1/2 dark:text-gray-400 hover:text-gray-600"
-          @click.stop="clear"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </span>
+<!--      <span-->
+<!--          v-if="clearable && !disabled && selectedItems.length > 0"-->
+<!--          class="absolute z-30 right-8 top-1/2 text-gray-500 -translate-y-1/2 cursor-pointer dark:text-gray-400 hover:text-gray-600"-->
+<!--          @click.stop="clear"-->
+<!--      >-->
+<!--        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">-->
+<!--          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />-->
+<!--        </svg>-->
+<!--      </span>-->
 
       <!-- Стрелка -->
-      <svg
-          class="ml-auto absolute right-3 text-gray-700 dark:text-gray-400 transition-transform duration-150"
-          :class="{ 'transform rotate-180': isOpen }"
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-            d="M4.79175 7.39551L10.0001 12.6038L15.2084 7.39551"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-        />
-      </svg>
+      <span class="ml-auto absolute z-30 right-3 bottom-3 text-gray-700 dark:text-gray-400 transition-transform duration-150">
+        <svg
+            class=""
+            :class="{ 'transform rotate-180': isOpen }"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+              d="M4.79175 7.39551L10.0001 12.6038L15.2084 7.39551"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+          />
+        </svg>
+      </span>
     </div>
 
     <!-- Dropdown -->
+
     <transition
         enter-active-class="transition duration-100 ease-out"
         enter-from-class="transform scale-95 opacity-0"
@@ -107,17 +110,24 @@
         leave-from-class="transform scale-100 opacity-100"
         leave-to-class="transform scale-95 opacity-0"
     >
+
       <div
           v-if="isOpen"
-          class="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-sm dark:bg-gray-900"
+          class=" z-55 w-full mt-1 bg-white rounded-lg shadow-sm border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
       >
+        <div class="p-2 border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
+          <BaseInput
+              v-model="search"
+              placeholder="Поиск..."
+          />
+        </div>
         <ul
             class="overflow-y-auto divide-y divide-gray-200 custom-scrollbar max-h-60 dark:divide-gray-800"
             role="listbox"
             aria-multiselectable="true"
         >
           <li
-              v-for="item in options"
+              v-for="item in filteredOptions"
               :key="item.value"
               @click="toggleItem(item)"
               class="relative flex items-center w-full px-3 py-2 cursor-pointer first:rounded-t-lg last:rounded-b-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -144,6 +154,7 @@
           </li>
         </ul>
       </div>
+
     </transition>
 
     <!-- Hint & Error -->
@@ -154,6 +165,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import BaseInput from "@/components/ui/BaseInput.vue";
 
 export type MultiSelectOption = {
   value: string | number
@@ -226,8 +238,9 @@ const wrapperClasses = computed(() => {
 const selectClasses = computed(() => {
   return [
     'w-full bg-transparent',
-    'border-gray-300 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10',
-    'dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800',
+    'dark:bg-gray-900 dark:text-white/90',
+    !isOpen.value ? 'border-gray-300 dark:border-gray-700': '',
+    isOpen.value ? 'border-brand-300 outline-hidden ring-3 ring-brand-500/10 dark:border-brand-800': '',
     sizeClass.value,
     props.disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : '',
     props.error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : '',
@@ -235,6 +248,17 @@ const selectClasses = computed(() => {
       .filter(Boolean)
       .join(' ')
 })
+
+const search = ref('')
+
+const searchOptions = (query: string) => {
+  if (!query) return props.options
+  return props.options.filter(item =>
+      item.label.toLowerCase().includes(query.toLowerCase())
+  )
+}
+
+const filteredOptions = computed(() => searchOptions(search.value))
 
 /**
  * Открыть / закрыть дропдаун

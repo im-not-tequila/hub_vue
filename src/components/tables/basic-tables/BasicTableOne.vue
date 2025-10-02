@@ -58,9 +58,9 @@
           </th>
           <th class="hidden px-3 py-2 text-left lg:table-cell sm:px-4 sm:py-3">
             <button class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                    @click="setSort('agreement')" type="button">
+                    @click="setSort('approvers')" type="button">
               Согласование
-              <span v-if="sortKey==='agreement'">
+              <span v-if="sortKey==='approvers'">
                 <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
                 <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
               </span>
@@ -68,9 +68,9 @@
           </th>
           <th class="px-3 py-2 text-left whitespace-nowrap sm:px-4 sm:py-3">
             <button class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                    @click="setSort('date')" type="button">
+                    @click="setSort('create_datetime')" type="button">
               Дата
-              <span v-if="sortKey==='date'">
+              <span v-if="sortKey==='create_datetime'">
                 <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
                 <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
               </span>
@@ -109,8 +109,9 @@
           </td>
           <td class="px-3 py-2 align-middle sm:px-4 sm:py-3">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10">
-                <img :src="doc.sender.avatar" :alt="doc.sender.name" />
+              <div class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 flex-shrink-0">
+<!--                <img :src="doc.sender.avatar" :alt="doc.sender.name" />-->
+                <img :src="avatarUrl()" :alt="doc.sender.name" />
               </div>
               <div>
                   <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem] sm:max-w-[10rem]">
@@ -125,10 +126,11 @@
           <td class="hidden px-3 py-2 align-middle md:table-cell sm:px-4 sm:py-3">
             <div class="flex items-center gap-3">
               <div
-                  class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 border-2"
+                  class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 border-2 flex-shrink-0"
                   :class="borderByStatus(doc.recipient.status)"
               >
-                <img :src="doc.recipient.avatar" :alt="doc.recipient.name" />
+<!--                <img :src="doc.recipient.avatar" :alt="doc.recipient.name" />-->
+                <img :src="avatarUrl()" :alt="doc.recipient.name" />
               </div>
               <div>
                   <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem]">
@@ -144,27 +146,36 @@
           <td class="hidden px-3 py-2 align-middle lg:table-cell sm:px-4 sm:py-3">
             <div class="flex -space-x-2">
               <div
-                  v-for="(member, idx) in doc.agreement"
+                  v-for="(member, idx) in doc.approvers"
                   :key="idx"
-                  class="relative w-8 h-8 overflow-hidden rounded-full border-2"
+                  class="relative w-8 h-8 overflow-hidden rounded-full border-2 flex-shrink-0"
                   :class="borderByStatus(member.status)"
                   :title="`${member.name} • ${member.role}`"
               >
-                <img :src="member.avatar" :alt="member.name" />
+<!--                <img :src="member.avatar" :alt="member.name" />-->
+                <img :src="avatarUrl()" :alt="member.name" />
               </div>
             </div>
           </td>
           <td class="px-3 py-2 align-middle whitespace-nowrap sm:px-4 sm:py-3">
-            <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ doc.date }}</p>
+            <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+              {{ new Date(doc.create_datetime).toLocaleString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) }}
+            </p>
           </td>
           <td class="hidden px-3 py-2 align-middle sm:table-cell sm:px-4 sm:py-3">
               <span
                   :class="[
                   'rounded-full px-2 py-0.5 text-theme-xs font-medium truncate max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]',
                   {
-                    'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400': computeDocStatus(doc) === 'На согласовании',
-                    'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500': computeDocStatus(doc) === 'Подписано',
-                    'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-500': computeDocStatus(doc) === 'Отказано',
+                    'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400': computeDocStatus(doc) === 'На согласовании',
+                    'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500': computeDocStatus(doc) === 'Утвержден',
+                    'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500': computeDocStatus(doc) === 'Отклонен',
                   },
                 ]"
               >
@@ -225,60 +236,43 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits, toRef, ref, computed } from 'vue'
+import { OutgoingPerson, DocumentStatus } from "@/modules/docs/types/doc";
+import { OutgoingResponse } from "@/modules/docs/types/response";
 
-interface SenderUser {
-  name: string
-  role: string
-  avatar: string
-}
+// function avatarUrl(fileName: string) {
+//   return new URL(`../../../assets/images/user/${fileName}`, import.meta.url).href
+// }
 
-type DocumentStatus = 'На согласовании' | 'Подписано' | 'Отказано'
-
-interface RecipientUser {
-  name: string
-  role: string
-  avatar: string
-  status: DocumentStatus
-}
-
-interface Document {
-  id: number
-  name: string
-  sender: SenderUser
-  recipient: RecipientUser
-  agreement: RecipientUser[]
-  date: string
-  status: DocumentStatus
-}
+const avatarUrl = () => new URL(`../../../assets/images/user/no_userpic.jpg`, import.meta.url).href
 
 const props = defineProps<{
-  docs: Document[]
+  docs: OutgoingResponse[]
 }>()
 
 const emit = defineEmits<{
-  (e: 'view', doc: Document): void
-  (e: 'download', doc: Document): void
+  (e: 'view', doc: OutgoingResponse): void
+  (e: 'download', doc: OutgoingResponse): void
   (e: 'delete', id: number): void
 }>()
 
-function anyDeclined(users: RecipientUser[]) {
-  return users.some(u => u.status === 'Отказано')
+function anyDeclined(users: OutgoingPerson[]) {
+  return users.some(u => u.status === 'Отклонен')
 }
-function allSigned(users: RecipientUser[]) {
-  return users.length > 0 && users.every(u => u.status === 'Подписано')
+function allSigned(users: OutgoingPerson[]) {
+  return users.length > 0 && users.every(u => u.status === 'Утвержден')
 }
-function computeDocStatus(doc: Document): DocumentStatus {
-  const participants = [doc.recipient, ...doc.agreement]
-  if (anyDeclined(participants)) return 'Отказано'
-  if (allSigned(participants)) return 'Подписано'
+function computeDocStatus(doc: OutgoingResponse): DocumentStatus {
+  const participants = [doc.recipient, ...doc.approvers]
+  if (anyDeclined(participants)) return 'Отклонен'
+  if (allSigned(participants)) return 'Утвержден'
   return 'На согласовании'
 }
 
 function borderByStatus(status: DocumentStatus) {
   switch (status) {
-    case 'Подписано':
+    case 'Утвержден':
       return 'border-emerald-500'
-    case 'Отказано':
+    case 'Отклонен':
       return 'border-rose-500'
     default:
       return 'border-amber-400'
@@ -289,7 +283,7 @@ function borderByStatus(status: DocumentStatus) {
 
 const docs = toRef(props, 'docs')
 
-type SortKey = 'id' | 'name' | 'sender' | 'recipient' | 'agreement' | 'date' | 'status'
+type SortKey = 'id' | 'name' | 'sender' | 'recipient' | 'approvers' | 'create_datetime' | 'status'
 const sortKey = ref<SortKey>('id')
 const sortAsc = ref(true)
 
@@ -304,16 +298,16 @@ function setSort(key: SortKey) {
 
 const statusOrder: Record<DocumentStatus, number> = {
   'На согласовании': 0,
-  'Подписано': 1,
-  'Отказано': 2,
+  'Утвержден': 1,
+  'Отклонен': 2,
 }
 
-function agreementScore(u: RecipientUser[]): number {
-  // Больше — «лучше»: подписано +1, на согласовании 0, отказано -1
-  return u.reduce((acc, m) => acc + (m.status === 'Подписано' ? 1 : m.status === 'Отказано' ? -1 : 0), 0)
+function approversScore(u: OutgoingPerson[]): number {
+  // Больше — «лучше»: Утвержден +1, на согласовании 0, Отклонен -1
+  return u.reduce((acc, m) => acc + (m.status === 'Утвержден' ? 1 : m.status === 'Отклонен' ? -1 : 0), 0)
 }
 
-function compare(a: Document, b: Document): number {
+function compare(a: OutgoingResponse, b: OutgoingResponse): number {
   let res = 0
   switch (sortKey.value) {
     case 'id':
@@ -328,13 +322,13 @@ function compare(a: Document, b: Document): number {
     case 'recipient':
       res = a.recipient.name.localeCompare(b.recipient.name)
       break
-    case 'agreement':
+    case 'approvers':
       // сначала по суммарному «прогрессу» согласования, потом по количеству участников
-      res = agreementScore(a.agreement) - agreementScore(b.agreement)
-      if (res === 0) res = a.agreement.length - b.agreement.length
+      res = approversScore(a.approvers) - approversScore(b.approvers)
+      if (res === 0) res = a.approvers.length - b.approvers.length
       break
-    case 'date':
-      res = new Date(a.date).getTime() - new Date(b.date).getTime()
+    case 'create_datetime':
+      res = new Date(a.create_datetime).getTime() - new Date(b.create_datetime).getTime()
       break
     case 'status':
       // сортируем по вычисленному статусу документа

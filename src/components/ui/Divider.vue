@@ -5,31 +5,14 @@ const props = withDefaults(defineProps<{
 </script>
 
 <template>
-  <div class="divider">
-    <span class="divider__line" aria-hidden="true"></span>
-    <span v-if="label" class="divider__text">{{ label }}</span>
-    <span class="divider__line" aria-hidden="true"></span>
+  <div class="flex items-center gap-3">
+    <span class="flex-1 h-px bg-gray-200 dark:bg-gray-800" aria-hidden="true"></span>
+    <span
+        v-if="label"
+        class="font-semibold text-gray-700 dark:text-gray-400 text-sm tracking-wider whitespace-nowrap"
+    >
+      {{ label }}
+    </span>
+    <span class="flex-1 h-px bg-gray-200 dark:bg-gray-800" aria-hidden="true"></span>
   </div>
 </template>
-
-<style scoped>
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.divider__line {
-  flex: 1 1 auto;
-  height: 1px;
-  background-color: #cbd5e1; /* gray-200 */
-}
-
-.divider__text {
-  color: #64748b;           /* gray-300 */
-  font-size: 0.75rem;       /* 12px */
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-</style>

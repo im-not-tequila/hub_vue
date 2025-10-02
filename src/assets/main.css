@@ -765,5 +765,6 @@ span.flatpickr-weekday,
 
 html, body {
     letter-spacing: .05em;
+    overflow-x: hidden;
     /*letter-spacing: .5px;*/
 }

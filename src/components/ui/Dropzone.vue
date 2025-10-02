@@ -50,7 +50,6 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import Dropzone from 'dropzone'
 import 'dropzone/dist/dropzone.css'
 
-// --- Props ---
 const props = defineProps({
   uploadUrl: {
     type: String,
@@ -68,12 +67,14 @@ const props = defineProps({
     type: String,
     default: 'Перетащите сюда ваш документ в формате PDF',
   },
+  is_error: {
+    type: Boolean,
+    default: false,
+  }
 })
 
-// --- Emits ---
 const emit = defineEmits(['update:file'])
 
-// --- Refs ---
 const dropzoneForm = ref(null)
 const dropzoneId = `dropzone-${Math.random().toString(36).substr(2, 9)}`
 let dropzoneInstance = null
@@ -83,6 +84,7 @@ onMounted(() => {
 
   dropzoneInstance = new Dropzone(`#${dropzoneId}`, {
     url: props.uploadUrl,
+    autoProcessQueue: false, // ❗ отключаем авто-загрузку
     thumbnailWidth: 150,
     maxFiles: props.maxFiles,
     maxFilesize: 5, // 5 MB
@@ -93,20 +95,12 @@ onMounted(() => {
     init: function () {
       this.on('addedfile', (file) => {
         console.log('Файл добавлен:', file)
-        emit('update:file', file)
+        emit('update:file', file) // просто передаём файл наверх
       })
 
       this.on('removedfile', () => {
         console.log('Файл удален')
         emit('update:file', null)
-      })
-
-      this.on('success', (file, response) => {
-        console.log('Файл успешно загружен', response)
-      })
-
-      this.on('error', (file, errorMessage) => {
-        console.error('Ошибка при загрузке', errorMessage)
       })
     },
   })
@@ -118,6 +112,7 @@ onBeforeUnmount(() => {
   }
 })
 </script>
+
 
 
 <style>

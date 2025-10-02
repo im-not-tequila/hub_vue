@@ -1,5 +1,5 @@
 <template>
-  <div :class="wrapperClasses">
+  <div :class="wrapperClasses" class="relative">
     <!-- Label -->
     <label
         v-if="label"
@@ -10,60 +10,41 @@
       <span v-if="required" class="text-error-500" aria-hidden="true">*</span>
     </label>
 
-    <div class="relative flex items-center w-full">
-      <!-- Prefix Slot -->
-      <span
-          v-if="$slots.prefix"
-          class="absolute left-3 flex items-center text-gray-500 dark:text-gray-400"
-      >
-        <slot name="prefix" />
-      </span>
-
-      <!-- Select -->
-      <select
-          ref="selectEl"
+    <!-- Input для поиска -->
+    <div
+        class="relative flex items-center w-full"
+    >
+      <input
           :id="selectId"
-          :name="name"
+          type="text"
+          v-model="searchQuery"
+          :placeholder="placeholder || 'Search...'"
           :disabled="disabled"
           :required="required"
           :aria-invalid="!!error"
           :aria-describedby="[hintId, errorId].filter(Boolean).join(' ') || undefined"
-          :value="modelValue ?? ''"
-          @input="onInput"
-          @change="onChange"
-          @focus="onFocus"
-          @blur="onBlur"
-          class="appearance-none pr-10"
-          :class="[selectClasses, { 'pl-10': $slots.prefix }]"
-      >
-        <option value="" disabled>{{ placeholder || 'Select Option' }}</option>
-        <option
-            v-for="opt in options"
-            :key="opt.value"
-            :value="opt.value"
-            class="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
-        >
-          {{ opt.label }}
-        </option>
-      </select>
+          @focus="isOpen = true"
+          :class="[
+          selectClasses,
+            { 'pl-10': $slots.prefix }
+          ]"
+          @blur="onBlurHandler"
+      />
 
-      <!-- Кнопка очистки -->
+      <!-- Очистка -->
       <span
           v-if="clearable && !disabled && modelValue"
-          class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-8 top-1/2 dark:text-gray-400 hover:text-gray-600"
+          class="absolute right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-600 dark:text-gray-400"
           @click="clear"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        ✕
       </span>
 
       <!-- Стрелка -->
-      <span
-          class="absolute z-20 text-gray-700 pointer-events-none right-3 top-1/2 -translate-y-1/2 dark:text-gray-400"
-      >
+      <span class="ml-auto absolute z-30 right-3 bottom-3 text-gray-700 dark:text-gray-400 transition-transform duration-150 pointer-events-none">
         <svg
-            class="stroke-current"
+            class=""
+            :class="{ 'transform rotate-180': isOpen }"
             width="20"
             height="20"
             viewBox="0 0 20 20"
@@ -71,7 +52,8 @@
             xmlns="http://www.w3.org/2000/svg"
         >
           <path
-              d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396"
+              d="M4.79175 7.39551L10.0001 12.6038L15.2084 7.39551"
+              stroke="currentColor"
               stroke-width="1.5"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -80,6 +62,35 @@
       </span>
     </div>
 
+    <!-- Выпадающий список -->
+    <transition
+        enter-active-class="transition duration-100 ease-out"
+        enter-from-class="transform scale-95 opacity-0"
+        enter-to-class="transform scale-100 opacity-100"
+        leave-active-class="transition duration-75 ease-in"
+        leave-from-class="transform scale-100 opacity-100"
+        leave-to-class="transform scale-95 opacity-0"
+    >
+      <div
+          v-if="isOpen"
+          class=" z-55 w-full mt-1 bg-white rounded-lg shadow-sm border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+      >
+        <ul
+            v-if="isOpen && filteredOptions.length"
+            class="overflow-y-auto divide-y divide-gray-200 custom-scrollbar max-h-60 dark:divide-gray-800"
+        >
+          <li
+              v-for="opt in filteredOptions"
+              :key="opt.value"
+              class="relative flex items-center w-full px-3 py-2 cursor-pointer first:rounded-t-lg last:rounded-b-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+              @mousedown.prevent="selectOption(opt)"
+          >
+            {{ opt.label }}
+          </li>
+        </ul>
+      </div>
+    </transition>
+
     <!-- Hint & Error -->
     <p v-if="hint && !error" class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ hint }}</p>
     <p v-if="error" class="mt-1 text-sm text-error-500">{{ error }}</p>
@@ -87,26 +98,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, type Ref } from 'vue'
+import { computed, ref } from 'vue'
 
 type SelectOption = {
   value: string | number
   label: string
 }
 
-type SelectSize = 'sm' | 'md' | 'lg'
-
 interface SelectProps {
   modelValue?: string | number | null
   options: SelectOption[]
   label?: string
   placeholder?: string
-  name?: string
-  id?: string
   disabled?: boolean
   required?: boolean
-  size?: SelectSize
   error?: string
+  is_error?: boolean
   hint?: string
   clearable?: boolean
   block?: boolean
@@ -116,42 +123,29 @@ const props = withDefaults(defineProps<SelectProps>(), {
   modelValue: '',
   disabled: false,
   required: false,
-  size: 'md',
+  is_error: false,
   clearable: false,
   block: false,
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number | null): void
-  (e: 'focus', ev: FocusEvent): void
-  (e: 'blur', ev: FocusEvent): void
-  (e: 'change', value: string | number | null, ev: Event): void
 }>()
 
-const selectEl: Ref<HTMLSelectElement | null> = ref(null)
-const uid = Math.random().toString(36).slice(2, 9)
+const searchQuery = ref('')
+const isOpen = ref(false)
 
-const selectId = computed(() => props.id || `bs-${props.name || 'select'}-${uid}`)
-const hintId = computed(() => (props.hint ? `${selectId.value}-hint` : undefined))
-const errorId = computed(() => (props.error ? `${selectId.value}-error` : undefined))
+const selectId = `bs-select-${Math.random().toString(36).slice(2, 9)}`
+const hintId = computed(() => (props.hint ? `${selectId}-hint` : undefined))
+const errorId = computed(() => (props.error ? `${selectId}-error` : undefined))
 
-/**
- * Размеры
- */
-const sizeClass = computed(() => {
-  switch (props.size) {
-    case 'sm':
-      return 'h-9 text-sm px-3 rounded-md'
-    case 'lg':
-      return 'h-12 text-base px-4 rounded-lg'
-    default: // md
-      return 'h-11 text-sm px-4 rounded-lg'
-  }
-})
+/** фильтрация по поиску */
+const filteredOptions = computed(() =>
+    props.options.filter((opt) =>
+        opt.label.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+)
 
-/**
- * Главный wrapper
- */
 const wrapperClasses = computed(() => {
   return [
     'w-full',
@@ -159,74 +153,43 @@ const wrapperClasses = computed(() => {
   ].join(' ')
 })
 
-/**
- * Классы для select
- */
 const selectClasses = computed(() => {
   return [
-    'w-full border bg-transparent shadow-theme-xs transition duration-150 ease-in-out',
-    'text-gray-800 dark:text-white/90 dark:placeholder:text-white/30',
-    'border-gray-300 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-800',
-    sizeClass.value,
+    // Базовые стили
+    'w-full border bg-transparent shadow-theme-xs placeholder:text-gray-400',
+    'text-gray-800 dark:text-white/90 dark:placeholder:text-white/30 focus:outline-hidden dark:bg-gray-900',
+
+    // Бордеры и цвета
+    (!props.error && !props.is_error) ? 'border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800': '',
+
+    // Переходы
+    'transition duration-150 ease-in-out',
+
+    'h-11 text-sm px-4 py-2.5 rounded-lg',
+
+    // Состояния
     props.disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : '',
-    props.error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : '',
+    (props.error || props.is_error) ? 'border-error-300 focus:border-error-300 focus:ring-3 focus:ring-error-500/10 dark:border-error-700 dark:focus:border-error-800': '',
   ]
       .filter(Boolean)
       .join(' ')
 })
 
-/**
- * Обработчики
- */
-function onInput(ev: Event) {
-  const target = ev.target as HTMLSelectElement
-  emit('update:modelValue', target.value)
+/** выбор */
+function selectOption(opt: SelectOption) {
+  emit('update:modelValue', opt.value)
+  searchQuery.value = opt.label
+  isOpen.value = false
 }
 
-function onChange(ev: Event) {
-  const target = ev.target as HTMLSelectElement
-  emit('change', target.value, ev)
-}
-
-function onFocus(ev: FocusEvent) {
-  emit('focus', ev)
-}
-
-function onBlur(ev: FocusEvent) {
-  emit('blur', ev)
-}
-
-/**
- * Очистка select
- */
+/** очистка */
 function clear() {
-  if (props.disabled) return
-  emit('update:modelValue', '')
-  requestAnimationFrame(() => {
-    selectEl.value?.focus()
-  })
+  emit('update:modelValue', null)
+  searchQuery.value = ''
 }
 
-/**
- * Слежение за внешними изменениями
- */
-watch(
-    () => props.modelValue,
-    (v) => {
-      if (!selectEl.value) return
-      const newVal = v == null ? '' : String(v)
-      if (selectEl.value.value !== newVal) {
-        selectEl.value.value = newVal
-      }
-    }
-)
-
-/**
- * Синхронизация при монтировании
- */
-onMounted(() => {
-  if (selectEl.value && props.modelValue != null) {
-    selectEl.value.value = String(props.modelValue)
-  }
-})
+/** потеря фокуса */
+function onBlurHandler() {
+  setTimeout(() => (isOpen.value = false), 100) // чтобы можно было кликнуть по опции
+}
 </script>

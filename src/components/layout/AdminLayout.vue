@@ -1,13 +1,15 @@
 <template>
   <div class="min-h-screen xl:flex bg-gray-50 dark:bg-slate-900
 ">
-    <app-sidebar />
+    <app-sidebar v-if="sidebar"/>
     <Backdrop />
     <div
-      class="flex-1 transition-all duration-300 ease-in-out"
-      :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
+      class="flex-1 transition-all duration-300 ease-in-out max-w-full overflow-x-hidden"
+      :class="[
+          (sidebar && header) ? (isExpanded || isHovered)  ? 'lg:ml-[290px]' : 'lg:ml-[90px]' : ''
+          ]"
     >
-      <app-header />
+      <app-header v-if="header" />
       <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
         <slot></slot>
       </div>
@@ -20,5 +22,21 @@ import AppSidebar from './sidebar/AppSidebar.vue'
 import AppHeader from './header/AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import Backdrop from './Backdrop.vue'
+import {defineProps} from "vue";
+
+const props = defineProps({
+  sidebar: {
+    type: Boolean,
+    required: false,
+    default: true,
+  },
+  header: {
+    type: Boolean,
+    required: false,
+    default: true,
+  },
+})
+
+
 const { isExpanded, isHovered } = useSidebar()
 </script>

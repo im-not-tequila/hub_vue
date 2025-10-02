@@ -44,9 +44,9 @@
           @keydown="onKeydown"
           @keyup="onKeyup"
           :class="[inputClasses, {
-    'pl-10': $slots.prefix,
-    'pr-10': $slots.suffix || clearable || (type === 'password' && passwordToggle)
-  }]"
+            'pl-10': $slots.prefix,
+            'pr-10': $slots.suffix || clearable || (type === 'password' && passwordToggle)
+          }]"
       />
 
       <span
@@ -139,6 +139,8 @@ interface InputProps {
   minlength?: number
   size?: InputSize
   error?: string
+  is_error?: boolean
+  is_success?: boolean
   hint?: string
   clearable?: boolean
   passwordToggle?: boolean
@@ -152,6 +154,8 @@ const props = withDefaults(defineProps<InputProps>(), {
   readonly: false,
   required: false,
   size: 'md',
+  is_error: false,
+  is_success: false,
   clearable: false,
   passwordToggle: false,
   block: false,
@@ -209,11 +213,11 @@ const inputClasses = computed(() => {
   return [
     // Базовые стили
     'w-full border bg-transparent shadow-theme-xs placeholder:text-gray-400',
-    'text-gray-800 dark:text-white/90 dark:placeholder:text-white/30',
+    'text-gray-800 dark:text-white/90 dark:placeholder:text-white/30 focus:outline-hidden dark:bg-gray-900',
 
     // Бордеры и цвета
-    'border-gray-300 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-800',
-
+    (!props.error && !props.is_error) ? 'border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800': '',
+    (!props.error && !props.is_error) ? 'border-success-300 focus:border-success-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800': '',
     // Переходы
     'transition duration-150 ease-in-out',
 
@@ -222,7 +226,8 @@ const inputClasses = computed(() => {
 
     // Состояния
     props.disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : '',
-    props.error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : '',
+    (props.error || props.is_error) ? 'border-error-300 focus:border-error-300 focus:ring-3 focus:ring-error-500/10 dark:border-error-700 dark:focus:border-error-800': '',
+
   ]
       .filter(Boolean)
       .join(' ')

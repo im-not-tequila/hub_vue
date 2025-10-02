@@ -1,35 +1,60 @@
 <template>
-  <form @submit.prevent="handleSubmit" class="login">
-    <div class="login__fields">
-      <BaseInput
-          v-model="form.login"
-          :label="loginLabel"
-          name="login"
-          type="text"
-          inputmode="numeric"
-          placeholder="Логин"
-          autocomplete="login"
-          :error="loginError || undefined"
-          clearable
-          block
-          @blur="touched.login = true"
-      />
+  <Modal
+      :model-value="messageModal"
+      title="Упс"
+  >
 
-      <BaseInput
-          v-model="form.password"
-          :label="passwordLabel"
-          name="password"
-          type="password"
-          placeholder="Пароль"
-          autocomplete="current-password"
-          :error="passwordError || undefined"
-          passwordToggle
-          block
-          @blur="touched.password = true"
-      />
+    <template #body>
+      <div class="flex flex-col justify-center items-center min-w-[20vw] min-h-[12vh]">
+        <Alert
+            variant="error"
+            title="Произошла ошибка"
+            :message="errors.serverMessage || ''"
+        />
+      </div>
+    </template>
 
-    </div>
+    <template #footer>
+      <div class="flex flex-col justify-center items-center">
+        <BaseButton
+            :variant="'outline'"
+            size="sm"
+            @click="messageModal = false; errors.serverMessage = null"
+        >
+          Закрыть
+        </BaseButton>
+      </div>
+    </template>
+  </Modal>
+  <form @submit.prevent="handleSubmit" class="grid gap-4">
+    <BaseInput
+        v-model="form.login"
+        :label="loginLabel"
+        name="login"
+        type="text"
+        inputmode="numeric"
+        placeholder="Логин"
+        autocomplete="login"
+        :is_error="errors.login"
+        clearable
+        block
+        @blur="touched.login = true"
+        @change="errors.login = false; errors.serverMessage = null"
+    />
 
+    <BaseInput
+        v-model="form.password"
+        :label="passwordLabel"
+        name="password"
+        type="password"
+        placeholder="Пароль"
+        autocomplete="current-password"
+        :is_error="errors.password"
+        passwordToggle
+        block
+        @blur="touched.password = true"
+        @change="errors.password = false; errors.serverMessage = null"
+    />
     <label
         for="keepLoggedIn"
         class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400"
@@ -71,13 +96,7 @@
       {{ rememberLabel }}
     </label>
 
-    <p v-if="errorMessage" class="login__error" role="alert">
-      {{ errorMessage }}
-    </p>
 
-    <p v-if="loginErrorMessage" class="text-center text-error-500" role="alert">
-      {{ loginErrorMessage }}
-    </p>
 
     <BaseButton
         :type="'submit'"
@@ -110,37 +129,44 @@ import { PlatonusLoginRequest } from '../types/auth'
 import BaseButton from "@/components/ui/BaseButton.vue";
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Divider from '@/components/ui/Divider.vue'
+import Modal from "@/components/ui/Modal.vue";
+import Alert from "@/components/ui/Alert.vue";
+import {ErrorIcon} from "@/components/icons";
 
 
 const authStore = useAuthStore()
 const router = useRouter()
-const loginLoading = ref(false)
 const ecpLoginLoading = ref(false)
-const loginErrorMessage = ref<string | null>(null)
 const remember = ref(false)
+const messageModal = ref(false)
 
-
-const props = withDefaults(defineProps<{
-  loginLoading?: boolean
-  ecpLoginLoading?: boolean
-  errorMessage?: string | null
-  loginLabel?: string
-  passwordLabel?: string
-  submitLabel?: string
-  ecpSubmitLabel?: string
-  rememberLabel?: string
-  showRemember?: boolean
-}>(), {
-  loginLoading: false,
-  ecpLoginLoading: false,
-  errorMessage: null,
-  loginLabel: 'Логин',
-  passwordLabel: 'Пароль',
-  submitLabel: 'Войти',
-  ecpSubmitLabel: 'Войти через ЭЦП',
-  rememberLabel: 'Запомнить меня',
-  showRemember: true,
+defineProps({
+  loginLoading: { type: Boolean, default: false },
+  ecpLoginLoading: { type: Boolean, default: false },
+  errorMessage: { type: String, default: null },
+  loginLabel: { type: String, default: 'Логин' },
+  passwordLabel: { type: String, default: 'Пароль' },
+  submitLabel: { type: String, default: 'Войти' },
+  ecpSubmitLabel: { type: String, default: 'Войти через ЭЦП' },
+  rememberLabel: { type: String, default: 'Запомнить меня' },
+  showRemember: { type: Boolean, default: true },
 })
+
+
+type Errors = {
+  login: boolean
+  password: boolean
+  serverMessage: string | null
+}
+
+const errors = reactive<Errors>({
+  login: false,
+  password: false,
+  serverMessage: null,
+})
+
+
+const hasError = computed(() => Object.values(errors).some(Boolean))
 
 const form = reactive<PlatonusLoginRequest>({
   login: '',
@@ -153,37 +179,34 @@ const touched = reactive({
   password: false,
 })
 
-const loginError = computed(() => {
-  if (!touched.login && !props.errorMessage) return ''
-  if (!form.login) return 'Введите логин'
-  return ''
-})
-
-const passwordError = computed(() => {
-  if (!touched.password && !props.errorMessage) return ''
-  if (!form.password) return 'Введите пароль'
-  return ''
-})
-
 // ---- ECP login ----
 
 async function onEcpLoginClick(ev: MouseEvent) {
   ev.preventDefault()
   if (ecpLoginLoading.value) return
 
-  try {
-    await authStore.loginWithEcp()
+  await authStore.loginWithEcp()
+
+  if (authStore.error) {
+    errors.serverMessage = authStore.error
+    messageModal.value = true
+  } else {
     await router.push({ name: 'docs' })
-  } catch (error) {
-    console.error('Ошибка при ECP логине:', error)
   }
 }
 
 async function handleSubmit() {
+  if (form.login === ''){errors.login = true}
+  if (!form.password){errors.password = true}
+
+  if (hasError.value) return
+
   await authStore.loginWithPlatonus(form)
 
   if (authStore.error) {
-    loginErrorMessage.value = authStore.error
+    errors.serverMessage = authStore.error
+    messageModal.value = true
+
   }
   else {
     await router.push({name: 'docs'})
@@ -191,20 +214,3 @@ async function handleSubmit() {
 }
 
 </script>
-
-<style scoped>
-.login {
-  display: grid;
-  gap: 1rem;
-}
-
-.login__fields {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.login__error {
-  color: #b91c1c; /* red-700 */
-  font-size: 0.9375rem;
-}
-</style>
