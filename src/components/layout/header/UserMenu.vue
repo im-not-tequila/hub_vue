@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="@/assets/images/user/no_userpic.jpg" alt="User" />
+        <img v-if="avatarSrc" :src="avatarSrc" alt="User" />
       </span>
 
       <span v-if="user" class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
@@ -59,13 +59,12 @@
 
 <script setup lang="ts">
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/components/icons'
-import {RouterLink, useRouter} from 'vue-router'
+import {RouterLink} from 'vue-router'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from "@/stores/userStore.js";
 import { User } from "@/types/user.js";
+import {useAvatars} from "@/composables/useAvatars";
 
-
-// const router = useRouter()
 
 const props = defineProps<{
   user?: User
@@ -77,10 +76,15 @@ const user = computed(() => props.user ?? userStore.user ?? null)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
+const { getAvatarSrc } = useAvatars()
+const avatarSrc = ref<string | null>(null)
+
+
+
 const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Профиль' },
-  { href: '/chat', icon: SettingsIcon, text: 'Настройки' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Помощь' },
+  { href: '/docs', icon: UserCircleIcon, text: 'Профиль' },
+  { href: '/docs', icon: SettingsIcon, text: 'Настройки' },
+  { href: '/docs', icon: InfoCircleIcon, text: 'Помощь' },
 ]
 
 const toggleDropdown = () => {
@@ -102,8 +106,9 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
+  avatarSrc.value = await getAvatarSrc(userStore.user?.id)
 })
 
 onUnmounted(() => {

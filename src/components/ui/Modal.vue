@@ -1,5 +1,4 @@
 <template>
-
   <div
       class="fixed inset-0 flex items-center justify-center  z-52"
       :class="{ 'pointer-events-none': !modelValue }"
@@ -157,11 +156,6 @@ const icons = {
   error: ErrorIcon,
   warning: WarningIcon,
   info: InfoCircleIcon,
-}
-
-function close() {
-  emit('update:modelValue', false) // стандарт для v-model
-  emit('close')
 }
 
 function afterLeave() {

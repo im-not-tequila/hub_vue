@@ -17,3 +17,7 @@ export interface DocumentSignRequest {
 export interface DocumentExecuteRequest {
     document_id: number
 }
+
+export interface DocumentCancelRequest {
+    document_id: number
+}

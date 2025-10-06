@@ -150,10 +150,10 @@
             <div class="flex items-center gap-3">
               <div
                   class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 border-2 flex-shrink-0"
-                  :class="borderByStatus(doc.recipient.status)"
+                  :class="avatarBorderByStatus(doc.recipient.status)"
               >
                 <!--                <img :src="doc.recipient.avatar" :alt="doc.recipient.name" />-->
-                <img :src="avatarUrl()" :alt="doc.recipient.shortname" />
+                <img :src="avatars[doc.recipient.id]" :alt="doc.recipient.shortname" />
               </div>
               <div>
                   <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem]">
@@ -171,10 +171,10 @@
                   v-for="(member, idx) in doc.approvers"
                   :key="idx"
                   class="relative w-8 h-8 overflow-hidden rounded-full border-2"
-                  :class="[borderByStatus(member.status), idx >= 5 ? '-mt-2' : '']"
+                  :class="[avatarBorderByStatus(member.status), idx >= 5 ? '-mt-2' : '']"
                   :title="`${member.shortname} • ${member.role}`"
               >
-                <img :src="avatarUrl()" :alt="member.shortname" />
+                <img v-if="avatars[member.id]" :src="avatars[member.id]" :alt="member.shortname" />
               </div>
             </div>
           </td>
@@ -193,7 +193,7 @@
             <span
                 :class="[
                   'rounded-full px-2 py-0.5 text-theme-xs font-medium truncate max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]',
-                  statusClasses[doc.status] || ''
+                  statusClasses(doc)
                 ]"
             >
                 {{ computeDocStatus(doc) }}
@@ -256,15 +256,18 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, toRef, ref, computed } from 'vue'
-import { DocumentStatus } from "@/modules/docs/types/doc";
+import {defineProps, defineEmits, toRef, ref, computed, reactive, onMounted} from 'vue'
+import {DocumentStatus, Person} from "@/modules/docs/types/doc";
 import { IncomingResponse } from "@/modules/docs/types/response";
+import {useUserStore} from "@/stores/userStore";
+import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
+import { useAvatars } from '@/composables/useAvatars'
 
-// function avatarUrl(fileName: string) {
-//   return new URL(`../../../assets/images/user/${fileName}`, import.meta.url).href
-// }
 
-const avatarUrl = () => new URL(`../../../assets/images/user/no_userpic.jpg`, import.meta.url).href
+const userStore = useUserStore()
+
+
+const avatarUrl = () => new URL(noUserpicUrl, import.meta.url).href
 
 const props = defineProps<{
   docs: IncomingResponse[]
@@ -276,39 +279,85 @@ const emit = defineEmits<{
   (e: 'delete', id: number): void
 }>()
 
+const { getAvatarSrc } = useAvatars()
+const avatars = reactive<Record<number, string>>({})
+
+onMounted(async () => {
+  for (const doc of props.docs) {
+    for (const member of doc.approvers) {
+      if (!avatars[member.id]) {
+        avatars[member.id] = await getAvatarSrc(member.id)
+      }
+    }
+    if (!avatars[doc.recipient.id]) {
+      // console.log('-------------')
+      // console.log(doc.recipient.id)
+      // console.log('-------------')
+      avatars[doc.recipient.id] = await getAvatarSrc(doc.recipient.id)
+    }
+    if (!avatars[doc.sender.id]) {
+      avatars[doc.sender.id] = await getAvatarSrc(doc.sender.id)
+    }
+  }
+})
+
+function currenUserIsIncomingByDoc(doc: IncomingResponse): Person | undefined {
+  if (userStore.user?.id === doc.recipient.id) return doc.recipient
+
+  const user: Person | undefined = doc?.approvers?.find(
+      (a: Person) => a.id === userStore.user?.id
+  )
+
+  if (user) return user
+
+  return undefined
+}
+
 function computeDocStatus(doc: IncomingResponse): string {
+  const user = currenUserIsIncomingByDoc(doc)
+
+  if (user) {
+    if (user.status === 'pending') return 'Вы не согласовали'
+    if (user.status === 'signed') return 'Вы утвердили'
+    if (user.status === 'cancelled') return 'Вы отклонили'
+  }
+
   if (doc.status === 'pending') return 'На согласовании'
   if (doc.status === 'signed') return 'Утвержден'
   if (doc.status === 'cancelled') return 'Отклонен'
+
   return doc.status
 }
 
-const statusClasses = {
-  'Вы не исполнили': 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400',
-  'Вы исполнили': 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500',
-  'Вы не согласовали': 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400',
-  'Вы не подписали': 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400',
-  'Вы согласовали': 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500',
-  'Вы подписали': 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500',
-  'Вы отклонили': 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500',
-  'signed': 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500',
-  'cancelled': 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500',
-  'pending': 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400',
+function statusClasses(doc: IncomingResponse): string {
+  const user = currenUserIsIncomingByDoc(doc)
+  let status = doc.status
+
+  if (user) {status = user.status}
+
+  switch (status) {
+    case 'signed':
+      return 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500'
+
+    case 'cancelled':
+      return 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500'
+
+    case 'pending':
+      return 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400'
+
+    default:
+      return ''
+  }
 }
 
-function borderByStatus(status: DocumentStatus) {
+function avatarBorderByStatus(status: DocumentStatus) {
   switch (status) {
-    case 'Вы согласовали':
-    case 'Вы подписали':
     case 'signed':
       return 'border-emerald-500'
 
-    case 'Вы отклонили':
     case 'cancelled':
       return 'border-rose-500'
 
-    case 'Вы не согласовали':
-    case 'Вы не подписали':
     case 'pending':
       return 'border-amber-400'
 

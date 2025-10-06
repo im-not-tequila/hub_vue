@@ -19,14 +19,7 @@ export type DocumentCategory = {
 export type DocumentStatus =
     'signed' |
     'cancelled' |
-    'pending' |
-    'Вы не согласовали' |
-    'Вы согласовали' |
-    'Вы не подписали' |
-    'Вы подписали' |
-    'Вы отклонили' |
-    'Вы не исполнили' |
-    'Вы исполнили'
+    'pending'
 
 export interface Person {
     id: number

@@ -217,7 +217,7 @@ const inputClasses = computed(() => {
 
     // Бордеры и цвета
     (!props.error && !props.is_error) ? 'border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800': '',
-    (!props.error && !props.is_error) ? 'border-success-300 focus:border-success-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800': '',
+    // (!props.error && !props.is_error) ? 'border-success-300 focus:border-success-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:focus:border-brand-800': '',
     // Переходы
     'transition duration-150 ease-in-out',
 

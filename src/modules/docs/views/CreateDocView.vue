@@ -3,11 +3,11 @@
       :modelValue="props.modelValue"
       title="Новый документ"
       :desc="desc"
-      class-name="w-[80vw] max-h-[90vh]"
+      class-name="w-[80vw] h-[90vh]"
   >
     <template #body>
 
-      <div v-if="currentStep === 1" class="min-h-[60vh] w-full">
+      <div v-if="currentStep === 1" class="w-full">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">
           <ComponentCard
               v-for="cat in documentTypesAndCategories"
@@ -36,7 +36,7 @@
       </div>
       </div>
 
-      <div v-else-if="currentStep === 2" class="min-h-[60vh] w-full">
+      <div v-else-if="currentStep === 2" class="w-full">
         <div
             class="no-scrollbar relative mx-auto p-4"
         >
@@ -119,6 +119,13 @@
       </div>
     </template>
   </Modal>
+
+  <ErrorModal
+      v-model="messageModal"
+      :error-message="errors.errorMessage ?? ''"
+      @close="errors.errorMessage = null"
+  />
+
 </template>
 
 <script setup lang="ts">
@@ -146,7 +153,15 @@ import { DocumentUploadRequest } from "@/modules/docs/types/request";
 import { AllDocumentTypesAndCategoryResponse } from "@/modules/docs/types/response";
 import { DocumentType } from "@/modules/docs/types/doc";
 import { signDocument } from "@/modules/docs/composables/signDocument";
+import {useUiStore} from "@/stores/uiStore";
+import ErrorModal from "@/components/ui/ErrorModal.vue";
+import {AxiosError} from "axios";
 
+
+const uiStore = useUiStore()
+
+
+const messageModal = ref(false)
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -161,7 +176,14 @@ const form = reactive<DocumentUploadRequest>({
   file: null as unknown as File
 })
 
-const errors = reactive({
+type Errors = {
+  errorMessage: string | null
+  document_name: boolean
+  recipient: boolean
+}
+
+const errors = reactive<Errors>({
+  errorMessage: null,
   document_name: false,
   recipient: false,
 })
@@ -262,13 +284,22 @@ async function signDocumentClick() {
 
   if (hasError.value) return
 
-  form.document_type_id = selectedDocumentType.value?.id ?? 0
-  form.approver_user_ids = approversSelectedOptions.value.map(option => option.value as number)
-  form.cms = await signDocument(form.file)
-  await documentUpload(form)
+  uiStore.showLoader()
+
+  try {
+    form.document_type_id = selectedDocumentType.value?.id ?? 0
+    form.approver_user_ids = approversSelectedOptions.value.map(option => option.value as number)
+    form.cms = await signDocument(form.file)
+    await documentUpload(form)
+  } catch (error) {
+    errors.errorMessage = 'Что-то случилось.'
+    console.log(error)
+    messageModal.value = true
+  }
+
+  uiStore.hideLoader()
   emit('submitted')
   closeModal()
-
 }
 
 </script>

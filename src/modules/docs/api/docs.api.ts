@@ -3,6 +3,7 @@ import httpClient from '@/api/httpClient'
 import {
     DocumentUploadRequest,
     DocumentSignRequest,
+    DocumentCancelRequest,
     DocumentExecuteRequest
 } from "@/modules/docs/types/request";
 
@@ -40,6 +41,10 @@ export const documentUpload = (data: DocumentUploadRequest) => {
 
 export const documentSign = (data: DocumentSignRequest) => {
     return httpClient.post(`/doc/sign`, data)
+}
+
+export const documentCancel = (data: DocumentCancelRequest) => {
+    return httpClient.post(`/doc/cancel`, data)
 }
 
 export const documentExecute = (data: DocumentExecuteRequest) => {

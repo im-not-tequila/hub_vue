@@ -67,7 +67,7 @@
             />
           </svg>
         </button>
-        <SearchBar />
+        <SearchBar v-model="internalSearch" />
       </div>
 
       <div
@@ -85,13 +85,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
 import ThemeToggler from '../../common/ThemeToggler.vue'
 import SearchBar from './SearchBar.vue'
 import HeaderLogo from './HeaderLogo.vue'
 import NotificationMenu from './NotificationMenu.vue'
 import UserMenu from './UserMenu.vue'
+
+
+const props = defineProps({
+  search: String
+})
+const emit = defineEmits(['update:search'])
+
+const internalSearch = computed({
+  get: () => props.search,
+  set: (value) => emit('update:search', value)
+})
 
 const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar()
 

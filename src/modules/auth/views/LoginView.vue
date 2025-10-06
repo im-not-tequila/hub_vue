@@ -27,8 +27,8 @@
 
 <script setup>
 import LoginForm from '../components/LoginForm.vue'
-import logoUrlBlue from '@/assets/logo_blue_nobg_sm.png'
-import logoUrlWhite from '@/assets/logo_white_nobg.png'
+import logoUrlBlue from '@/assets/logo/logo_blue_nobg_512.png'
+import logoUrlWhite from '@/assets/logo/logo_white_nobg_512.png'
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 

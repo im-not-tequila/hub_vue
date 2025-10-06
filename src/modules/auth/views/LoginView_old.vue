@@ -1,6 +1,6 @@
 <script setup>
 import LoginForm from '../components/LoginForm.vue'
-import logoUrl from '@/assets/logo_blue_nobg_sm.png'
+import logoUrl from '@/assets/logo/logo_blue_nobg_sm.png'
 
 </script>
 

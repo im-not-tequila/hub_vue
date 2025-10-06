@@ -1,31 +1,11 @@
 <template>
-  <Modal
-      :model-value="messageModal"
-      title="Упс"
-  >
+  <ErrorModal
+      v-if="errors.errorMessage"
+      v-model="messageModal"
+      :error-message="errors.errorMessage"
+      @close="errors.errorMessage = null"
+  />
 
-    <template #body>
-      <div class="flex flex-col justify-center items-center min-w-[20vw] min-h-[12vh]">
-        <Alert
-            variant="error"
-            title="Произошла ошибка"
-            :message="errors.serverMessage || ''"
-        />
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="flex flex-col justify-center items-center">
-        <BaseButton
-            :variant="'outline'"
-            size="sm"
-            @click="messageModal = false; errors.serverMessage = null"
-        >
-          Закрыть
-        </BaseButton>
-      </div>
-    </template>
-  </Modal>
   <form @submit.prevent="handleSubmit" class="grid gap-4">
     <BaseInput
         v-model="form.login"
@@ -39,7 +19,7 @@
         clearable
         block
         @blur="touched.login = true"
-        @change="errors.login = false; errors.serverMessage = null"
+        @change="errors.login = false; errors.errorMessage = null"
     />
 
     <BaseInput
@@ -53,7 +33,7 @@
         passwordToggle
         block
         @blur="touched.password = true"
-        @change="errors.password = false; errors.serverMessage = null"
+        @change="errors.password = false; errors.errorMessage = null"
     />
     <label
         for="keepLoggedIn"
@@ -129,11 +109,11 @@ import { PlatonusLoginRequest } from '../types/auth'
 import BaseButton from "@/components/ui/BaseButton.vue";
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Divider from '@/components/ui/Divider.vue'
-import Modal from "@/components/ui/Modal.vue";
-import Alert from "@/components/ui/Alert.vue";
-import {ErrorIcon} from "@/components/icons";
+import ErrorModal from "@/components/ui/ErrorModal.vue";
+import {useUiStore} from "@/stores/uiStore";
 
 
+const uiStore = useUiStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const ecpLoginLoading = ref(false)
@@ -156,13 +136,13 @@ defineProps({
 type Errors = {
   login: boolean
   password: boolean
-  serverMessage: string | null
+  errorMessage: string | null
 }
 
 const errors = reactive<Errors>({
   login: false,
   password: false,
-  serverMessage: null,
+  errorMessage: null,
 })
 
 
@@ -185,14 +165,17 @@ async function onEcpLoginClick(ev: MouseEvent) {
   ev.preventDefault()
   if (ecpLoginLoading.value) return
 
+  uiStore.showLoader()
+
   await authStore.loginWithEcp()
 
   if (authStore.error) {
-    errors.serverMessage = authStore.error
+    errors.errorMessage = authStore.error
     messageModal.value = true
   } else {
     await router.push({ name: 'docs' })
   }
+  uiStore.hideLoader()
 }
 
 async function handleSubmit() {
@@ -204,7 +187,7 @@ async function handleSubmit() {
   await authStore.loginWithPlatonus(form)
 
   if (authStore.error) {
-    errors.serverMessage = authStore.error
+    errors.errorMessage = authStore.error
     messageModal.value = true
 
   }

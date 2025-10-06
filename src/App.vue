@@ -4,6 +4,7 @@
       <router-view />
     </SidebarProvider>
   </ThemeProvider>
+  <GlobalLoader />
 </template>
 
 <script setup lang="ts">
@@ -14,6 +15,7 @@ import { onMounted } from "vue";
 
 import { useUserStore } from '@/stores/userStore'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import GlobalLoader from '@/components/layout/GlobalLoader.vue'
 
 
 const userStore = useUserStore()
@@ -26,7 +28,6 @@ onMounted(async () => {
     try {
       await userStore.loadUser()
     } catch (error) {
-      console.error('Ошибка загрузки пользователя:', error)
       authStore.logout()
     }
   }

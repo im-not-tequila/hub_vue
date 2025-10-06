@@ -9,9 +9,9 @@
           (sidebar && header) ? (isExpanded || isHovered)  ? 'lg:ml-[290px]' : 'lg:ml-[90px]' : ''
           ]"
     >
-      <app-header v-if="header" />
+      <app-header v-if="header" v-model:search="search" />
       <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-        <slot></slot>
+        <slot :search="search"></slot>
       </div>
     </div>
   </div>
@@ -22,7 +22,7 @@ import AppSidebar from './sidebar/AppSidebar.vue'
 import AppHeader from './header/AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import Backdrop from './Backdrop.vue'
-import {defineProps} from "vue";
+import {defineProps, ref} from "vue";
 
 const props = defineProps({
   sidebar: {
@@ -39,4 +39,7 @@ const props = defineProps({
 
 
 const { isExpanded, isHovered } = useSidebar()
+const search = ref('')
+defineExpose({ search })
+
 </script>

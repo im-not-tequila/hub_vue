@@ -19,23 +19,23 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
+      <router-link to="/docs">
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
           class="dark:hidden"
-          src="../../../assets/logo_blue_nobg_sm.png"
+          src="../../../assets/logo/logo_blue_nobg_256.png"
           alt="Logo"
         />
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
           class="hidden dark:block"
-          src="../../../assets/logo_white_nobg.png"
+          src="../../../assets/logo/logo_white_nobg_256.png"
           alt="Logo"
 
         />
         <img
           v-else
-          src="../../../assets/logo_white_nobg.png"
+          src="../../../assets/logo/logo_white_nobg_256.png"
           alt="Logo"
 
         />
