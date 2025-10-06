@@ -10,7 +10,9 @@ export const useAvatars = () => {
             const response = await httpClient.get(`/user/${user_id}/avatar`, { responseType: 'blob' })
             console.log(response.data)
             console.log('1111111111111111111111111111111111111')
-            return URL.createObjectURL(response.data)
+            const newUrl = URL.createObjectURL(response.data)
+            console.log(newUrl)
+            return newUrl
         } catch {
             return new URL(noUserpicUrl, import.meta.url).href
         }
