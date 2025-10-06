@@ -1,7 +1,6 @@
 import httpClient from '@/api/httpClient'
 import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 
-const cache = new Map<number, string>()
 
 export const useAvatars = () => {
     const getAvatarSrc = async (user_id?: number) => {

@@ -256,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import {defineProps, defineEmits, toRef, ref, computed, reactive, onMounted} from 'vue'
+import {defineProps, defineEmits, toRef, ref, computed, reactive, onMounted, onUnmounted} from 'vue'
 import {DocumentStatus, Person} from "@/modules/docs/types/doc";
 import { IncomingResponse } from "@/modules/docs/types/response";
 import {useUserStore} from "@/stores/userStore";
@@ -281,24 +281,30 @@ const emit = defineEmits<{
 
 const { getAvatarSrc } = useAvatars()
 const avatars = reactive<Record<number, string>>({})
+const blobUrls: string[] = [] // чтобы потом освобождать
 
 onMounted(async () => {
   for (const doc of props.docs) {
     for (const member of doc.approvers) {
       if (!avatars[member.id]) {
-        avatars[member.id] = await getAvatarSrc(member.id)
+        const url = await getAvatarSrc(member.id)
+        avatars[member.id] = url
+        if (url.startsWith('blob:')) blobUrls.push(url)
       }
     }
-    if (!avatars[doc.recipient.id]) {
-      // console.log('-------------')
-      // console.log(doc.recipient.id)
-      // console.log('-------------')
-      avatars[doc.recipient.id] = await getAvatarSrc(doc.recipient.id)
-    }
-    if (!avatars[doc.sender.id]) {
-      avatars[doc.sender.id] = await getAvatarSrc(doc.sender.id)
+    for (const user of [doc.recipient, doc.sender]) {
+      if (!avatars[user.id]) {
+        const url = await getAvatarSrc(user.id)
+        avatars[user.id] = url
+        if (url.startsWith('blob:')) blobUrls.push(url)
+      }
     }
   }
+})
+
+// освобождаем blob URLs при размонтировании компонента
+onUnmounted(() => {
+  blobUrls.forEach(url => URL.revokeObjectURL(url))
 })
 
 function currenUserIsIncomingByDoc(doc: IncomingResponse): Person | undefined {
