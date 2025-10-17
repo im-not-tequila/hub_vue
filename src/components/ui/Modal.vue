@@ -2,7 +2,6 @@
   <div
       class="fixed inset-0 flex items-center justify-center  z-52"
       :class="{ 'pointer-events-none': !modelValue }"
-
       aria-hidden="false"
   >
     <!-- Оверлей -->
@@ -22,6 +21,7 @@
         aria-hidden="true"
     ></div>
     </transition>
+
     <transition
         appear
         enter-active-class="transition transform duration-200 ease-out delay-75"

@@ -109,143 +109,194 @@
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
         <transition-group
             appear
-            enter-active-class="transition duration-800 ease-out"
+            enter-active-class="transition duration-400 ease-out"
             enter-from-class="opacity-0"
             enter-to-class="opacity-100"
             leave-active-class="transition duration-250 ease-in"
             leave-from-class="opacity-100"
             leave-to-class="opacity-0"
         >
-        <tr
-            v-for="doc in sortedDocs"
-            :key="doc.id"
-            class="border-t border-gray-100 dark:border-gray-800"
-        >
+          <tr
+              v-for="doc in sortedDocs"
+              :key="doc.id"
+              :class="[
+                  'border-t border-gray-100 dark:border-gray-800',
+                  doc.is_hidden ? 'bg-warning-500/20 dark:bg-warning-500/15' : '',
+                  ]"
+          >
 
-          <td class="px-3 py-2 align-middle sm:px-4 sm:py-3">
-            <span class="text-gray-800 text-theme-sm dark:text-white/90">{{ doc.id }}</span>
-          </td>
-          <td class="px-3 py-2 align-middle sm:px-4 sm:py-3">
-            <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90 max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]">
-              {{ doc.name }}
-            </p>
-          </td>
-          <td class="px-3 py-2 align-middle sm:px-4 sm:py-3">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 flex-shrink-0">
-                <!--                <img :src="doc.sender.avatar" :alt="doc.sender.name" />-->
-                <img :src="avatarUrl()" :alt="doc.sender.shortname" />
-              </div>
-              <div>
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem] sm:max-w-[10rem]">
-                    {{ doc.sender.shortname }}
-                  </span>
-                <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
-                    {{ doc.sender.role }}
-                  </span>
-              </div>
-            </div>
-          </td>
-          <td class="hidden px-3 py-2 align-middle md:table-cell sm:px-4 sm:py-3">
-            <div class="flex items-center gap-3">
-              <div
-                  class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 border-2 flex-shrink-0"
-                  :class="avatarBorderByStatus(doc.recipient.status)"
-              >
-                <!--                <img :src="doc.recipient.avatar" :alt="doc.recipient.name" />-->
-                <img :src="avatars[doc.recipient.id]" :alt="doc.recipient.shortname" />
-              </div>
-              <div>
-                  <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem]">
-                    {{ doc.recipient.shortname }}
-                  </span>
-                <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
-                    {{ doc.recipient.role }}
-                  </span>
-              </div>
-            </div>
-          </td>
-          <td class="hidden px-3 py-2 align-middle lg:table-cell sm:px-4 sm:py-3">
-            <div class="grid grid-cols-5 gap-x-2">
-              <div
-                  v-for="(member, idx) in doc.approvers"
-                  :key="idx"
-                  class="relative w-8 h-8 overflow-hidden rounded-full border-2"
-                  :class="[avatarBorderByStatus(member.status), idx >= 5 ? '-mt-2' : '']"
-                  :title="`${member.shortname} • ${member.role}`"
-              >
-                <img v-if="avatars[member.id]" :src="avatars[member.id]" :alt="member.shortname" />
-              </div>
-            </div>
-          </td>
-          <td class="px-3 py-2 align-middle whitespace-nowrap sm:px-4 sm:py-3">
-            <p class="text-gray-500 text-theme-sm dark:text-gray-400">
-              {{ new Date(doc.create_datetime).toLocaleString('ru-RU', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }) }}
-            </p>
-          </td>
-          <td class="hidden px-3 py-2 align-middle sm:table-cell sm:px-4 sm:py-3">
-            <span
-                :class="[
-                  'rounded-full px-2 py-0.5 text-theme-xs font-medium truncate max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]',
-                  statusClasses(doc)
-                ]"
-            >
-                {{ computeDocStatus(doc) }}
-              </span>
-          </td>
-          <td class="px-3 py-2 align-middle sm:px-4 sm:py-3">
-            <div class="flex items-center gap-2">
-              <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-md bg-primary-500/10 hover:bg-primary-500/20 p-2 text-black dark:text-white/90"
-                  @click="emit('view', doc)"
-                  title="Просмотреть"
-                  aria-label="Просмотреть"
-              >
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-              <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 p-2 dark:text-emerald-400"
-                  @click="emit('download', doc)"
-                  title="Скачать"
-                  aria-label="Скачать"
-              >
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <path d="M7 10l5 5 5-5"/>
-                  <path d="M12 15V3"/>
-                </svg>
-              </button>
-              <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-md bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 p-2 dark:text-rose-400"
-                  @click="emit('delete', doc.id)"
-                  title="Удалить"
-                  aria-label="Удалить"
-              >
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/>
-                  <path d="M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-              </button>
-            </div>
-          </td>
+            <td class="px-4 py-2 align-middle sm:px-4 sm:py-4">
+              <span class="text-gray-800 text-theme-sm dark:text-white/90">{{ doc.id }}</span>
+            </td>
 
-        </tr>
+            <td class="px-2 py-2 align-middle sm:px-2 sm:py-4">
+              <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90 max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]">
+                {{ doc.name }}
+              </p>
+            </td>
+
+            <td class="px-2 py-2 align-middle sm:px-2 sm:py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 flex-shrink-0">
+                  <img :src="`${apiUrl}/user/${doc.sender.id}/avatar`" :alt="doc.sender.shortname" @error="onAvatarError"/>
+                </div>
+                <div>
+                    <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem] sm:max-w-[10rem]">
+                      {{ doc.sender.shortname }}
+                    </span>
+                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
+                      {{ doc.sender.role }}
+                    </span>
+                </div>
+              </div>
+            </td>
+
+            <td class="hidden px-2 py-2 align-middle md:table-cell sm:px-2 sm:py-4">
+              <div class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 border-2 flex-shrink-0"
+                    :class="avatarBorder(colorByStatus(undefined, doc.recipient.status))"
+                >
+                  <img :src="`${apiUrl}/user/${doc.recipient.id}/avatar`" :alt="doc.recipient.shortname" @error="onAvatarError"/>
+                </div>
+                <div>
+                    <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem]">
+                      {{ doc.recipient.shortname }}
+                    </span>
+                  <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
+                      {{ doc.recipient.role }}
+                    </span>
+                </div>
+              </div>
+            </td>
+
+            <td class="hidden px-6 py-2 align-middle lg:table-cell sm:px-6 sm:py-4">
+              <div class="grid grid-cols-5 gap-x-2">
+                <div
+                    v-for="(member, idx) in doc.approvers"
+                    :key="idx"
+                    class="relative w-8 h-8 overflow-hidden rounded-full border-2"
+                    :class="[avatarBorder(colorByStatus(undefined, member.status)), idx >= 5 ? '-mt-2' : '']"
+                    :title="`${member.shortname} • ${member.role}`"
+                >
+                  <img :src="`${apiUrl}/user/${member.id}/avatar`" :alt="member.shortname" @error="onAvatarError"/>
+                </div>
+              </div>
+            </td>
+
+            <td class="px-2 py-2 align-middle whitespace-nowrap sm:px-2 sm:py-4">
+              <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+                {{ new Date(doc.create_datetime).toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) }}
+              </p>
+            </td>
+
+            <td class="hidden px-2 py-2 align-middle sm:table-cell sm:px-2 sm:py-4">
+              <span
+                  :class="[
+                    'rounded-full px-2 py-0.5 text-theme-xs font-medium truncate max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]',
+                    statusClasses(colorByStatus(doc), false)
+                  ]"
+              >
+                  {{ computeDocStatus(doc) }}
+                </span>
+            </td>
+
+            <td class="px-2 py-2 align-middle sm:px-2 sm:py-4">
+              <div class="flex items-center gap-1">
+
+                <button
+                    type="button"
+                    :class="['relative inline-flex items-center justify-center rounded-md p-2',
+                    statusClasses('green')]"
+                    @click="emit('view', doc)"
+                    title="Просмотреть"
+                    aria-label="Просмотреть"
+                >
+
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+
+                  <span
+                      v-if="currenUserIsIncomingByDoc(doc) && colorByStatus(doc) === 'yellow'"
+                      :class="['absolute right-0 top-0 h-2 w-2 rounded-full bg-orange-400', 'flex']"
+                  >
+                    <span
+                        class="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 animate-ping"
+                    ></span>
+                  </span>
+                </button>
+
+                <button
+                      type="button"
+                      :class="['inline-flex items-center justify-center rounded-md p-2',
+                      statusClasses('green')
+                    ]"
+                      @click="emit('download', doc)"
+                      title="Скачать"
+                      aria-label="Скачать"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <path d="M7 10l5 5 5-5"/>
+                      <path d="M12 15V3"/>
+                    </svg>
+                  </button>
+
+                <button
+                  type="button"
+                  :class="['inline-flex items-center justify-center rounded-md p-2',
+                      !doc.is_hidden ? statusClasses('yellow'): statusClasses('green')
+                    ]"
+                  @click="!doc.is_hidden ? emit('hide', doc.id): emit('unhide', doc.id)"
+                  :title="!doc.is_hidden ? 'Скрыть': 'Не скрывать'"
+                  :aria-label="!doc.is_hidden ? 'Скрыть': 'Не скрывать'"
+              >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                </svg>
+
+
+              </button>
+
+                <button
+                    v-if="isOutgoing()"
+                    type="button"
+                    :class="['inline-flex items-center justify-center rounded-md p-2',
+                      statusClasses('red')
+                    ]"
+                    @click="emit('revoke', doc.id)"
+                    title="Удалить"
+                    aria-label="Удалить"
+                >
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/>
+                    <path d="M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+
+              </div>
+            </td>
+
+          </tr>
         </transition-group>
         </tbody>
 
@@ -264,47 +315,82 @@ import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 import { useAvatars } from '@/composables/useAvatars'
 
 
-const userStore = useUserStore()
-
-
-const avatarUrl = () => new URL(noUserpicUrl, import.meta.url).href
+type SortKey = 'id' | 'name' | 'sender' | 'recipient' | 'approvers' | 'create_datetime' | 'status'
 
 const props = defineProps<{
   docs: IncomingResponse[]
+  showHidden?: boolean
+  showPending?: boolean
+  showRejected?: boolean
+  showSigned?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'view', doc: IncomingResponse): void
   (e: 'download', doc: IncomingResponse): void
-  (e: 'delete', id: number): void
+  (e: 'revoke', id: number): void
+  (e: 'hide', id: number): void
+  (e: 'unhide', id: number): void
 }>()
 
+const apiUrl = import.meta.env.VITE_API_URL
+const userStore = useUserStore()
+const docs = toRef(props, 'docs')
+const sortKey = ref<SortKey>('create_datetime')
+const sortAsc = ref(false)
+
+const avatarUrl = () => new URL(noUserpicUrl, import.meta.url).href
 const { getAvatarSrc } = useAvatars()
 const avatars = reactive<Record<number, string>>({})
-const blobUrls: string[] = [] // чтобы потом освобождать
+const blobUrls: string[] = []
 
-onMounted(async () => {
-  for (const doc of props.docs) {
-    for (const member of doc.approvers) {
-      if (!avatars[member.id]) {
-        const url = await getAvatarSrc(member.id)
-        avatars[member.id] = url
-        if (url.startsWith('blob:')) blobUrls.push(url)
-      }
-    }
-    for (const user of [doc.recipient, doc.sender]) {
-      if (!avatars[user.id]) {
-        const url = await getAvatarSrc(user.id)
-        avatars[user.id] = url
-        if (url.startsWith('blob:')) blobUrls.push(url)
-      }
-    }
+const sortedDocs = computed(() => {
+  let arr = [...docs.value]
+
+  if (!props.showHidden) {
+    arr = arr.filter(doc => !doc.is_hidden)
   }
+
+  if (!props.showPending) {
+    arr = arr.filter(doc => colorByStatus(doc) !== 'yellow')
+  }
+
+  if (!props.showRejected) {
+    arr = arr.filter(doc => colorByStatus(doc) !== 'red')
+  }
+
+  if (!props.showSigned) {
+    arr = arr.filter(doc => colorByStatus(doc) !== 'green')
+  }
+
+  arr.sort(compare)
+
+  return arr
 })
 
-// освобождаем blob URLs при размонтировании компонента
-onUnmounted(() => {
-  blobUrls.forEach(url => URL.revokeObjectURL(url))
+const colorByStatus = ((
+    doc: IncomingResponse | undefined = undefined,
+    status: DocumentStatus | undefined = undefined
+) => {
+  if (doc) {
+    const user = currenUserIsIncomingByDoc(doc)
+    status = doc.status
+    if (user) {status = user.status}
+  }
+
+  if (status) {
+    switch (status) {
+      case 'signed':
+        return 'green'
+
+      case 'cancelled':
+        return 'red'
+
+      case 'pending':
+        return 'yellow'
+    }
+  }
+  return ''
 })
 
 function currenUserIsIncomingByDoc(doc: IncomingResponse): Person | undefined {
@@ -317,6 +403,10 @@ function currenUserIsIncomingByDoc(doc: IncomingResponse): Person | undefined {
   if (user) return user
 
   return undefined
+}
+
+function isOutgoing() {
+  return userStore.user?.id === props.docs[0].sender.id
 }
 
 function computeDocStatus(doc: IncomingResponse): string {
@@ -335,50 +425,50 @@ function computeDocStatus(doc: IncomingResponse): string {
   return doc.status
 }
 
-function statusClasses(doc: IncomingResponse): string {
-  const user = currenUserIsIncomingByDoc(doc)
-  let status = doc.status
+function statusClasses(color: string, isHover: boolean = true): string {
+  let classes = ''
 
-  if (user) {status = user.status}
+  switch (color) {
+    case 'green':
+      classes = 'bg-success-500/55 dark:bg-success-500/15 text-white dark:text-success-500'
+      if (isHover) {classes += ' hover:bg-success-500/50 dark:hover:bg-success-500/30'}
+      return classes
 
-  switch (status) {
-    case 'signed':
-      return 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500'
+    case 'red':
+      classes = 'bg-error-500/55 dark:bg-error-500/15 text-white  dark:text-error-500'
+      if (isHover) {classes += ' hover:bg-error-500/50 dark:hover:bg-error-500/30'}
+      return classes
 
-    case 'cancelled':
-      return 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500'
+    case 'yellow':
+      classes = 'bg-warning-500/55 dark:bg-warning-500/15 text-white dark:text-orange-400'
+      if (isHover) {classes += ' hover:bg-warning-500/50 dark:hover:bg-warning-500/30'}
+      return classes
 
-    case 'pending':
-      return 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400'
+    case 'gray':
+      classes = 'bg-gray-500/55 dark:bg-gray-500/15 text-white dark:text-gray-400'
+      if (isHover) {classes += ' hover:bg-gray-500/50 dark:hover:bg-gray-500/30'}
+      return classes
 
     default:
-      return ''
+      return classes
   }
 }
 
-function avatarBorderByStatus(status: DocumentStatus) {
-  switch (status) {
-    case 'signed':
+function avatarBorder(color: string) {
+  switch (color) {
+    case 'green':
       return 'border-emerald-500'
 
-    case 'cancelled':
+    case 'red':
       return 'border-rose-500'
 
-    case 'pending':
+    case 'yellow':
       return 'border-amber-400'
 
     default:
       return 'border-gray-300'
   }
 }
-
-// Делаем доступными в шаблоне
-
-const docs = toRef(props, 'docs')
-
-type SortKey = 'id' | 'name' | 'sender' | 'recipient' | 'approvers' | 'create_datetime' | 'status'
-const sortKey = ref<SortKey>('create_datetime')
-const sortAsc = ref(false)
 
 function setSort(key: SortKey) {
   if (sortKey.value === key) {
@@ -388,7 +478,6 @@ function setSort(key: SortKey) {
     sortAsc.value = true
   }
 }
-
 
 function compare(a: IncomingResponse, b: IncomingResponse): number {
   let res = 0
@@ -412,11 +501,8 @@ function compare(a: IncomingResponse, b: IncomingResponse): number {
   return sortAsc.value ? res : -res
 }
 
-const sortedDocs = computed(() => {
-  const arr = [...docs.value]
-  arr.sort(compare)
-  return arr
-})
-
+function onAvatarError(event) {
+  event.target.src = noUserpicUrl
+}
 
 </script>

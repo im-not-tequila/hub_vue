@@ -12,6 +12,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.19",
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
+    "@fullcalendar/vue3": "^6.1.19",
     "apexcharts": "^5.3.5",
     "axios": "^1.11.0",
     "dropzone": "^6.0.0-beta.2",
@@ -21,6 +26,7 @@
     "pinia": "^3.0.3",
     "swiper": "^11.2.10",
     "vue": "^3.5.18",
+    "vue-flatpickr-component": "^12.0.0",
     "vue-multiselect": "^3.3.1",
     "vue-router": "^4.5.1",
     "vue3-apexcharts": "^1.8.0"

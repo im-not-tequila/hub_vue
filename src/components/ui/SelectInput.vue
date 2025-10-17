@@ -121,6 +121,7 @@ interface SelectProps {
 
 const props = withDefaults(defineProps<SelectProps>(), {
   modelValue: '',
+  placeholder: 'Выберите элемент',
   disabled: false,
   required: false,
   is_error: false,

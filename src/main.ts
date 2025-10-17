@@ -11,6 +11,10 @@ import App from './App.vue'
 import router from './router'
 import VueApexCharts from 'vue3-apexcharts'
 import { useUiStore } from '@/stores/uiStore'
+import {useUserStore} from "@/stores/userStore";
+
+
+
 
 
 const app = createApp(App)
@@ -20,6 +24,9 @@ app.use(router)
 app.component('ApexChart', VueApexCharts)
 
 const ui = useUiStore()
+
+// const userStore = useUserStore()
+// await userStore.loadUser()
 
 router.beforeEach((to, from, next) => {
     ui.showLoader()

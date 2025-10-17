@@ -19,7 +19,8 @@ export type DocumentCategory = {
 export type DocumentStatus =
     'signed' |
     'cancelled' |
-    'pending'
+    'pending' |
+    'revoked'
 
 export interface Person {
     id: number

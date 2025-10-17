@@ -17,7 +17,16 @@ const routes = [
             requiresAuth: true,
             title: 'eCommerce Dashboard',
         }
-        },
+    },
+    {
+        path: '/visit-history',
+        name: 'visit_history',
+        component: () => import('@/modules/visit-history/views/VisitHistoryVue.vue'),
+        meta: {
+            requiresAuth: true,
+            title: 'eCommerce Dashboard',
+        }
+    },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
     { path: '/test', name: 'test', component: TestView, meta: { requiresAuth: true } },
 ]
@@ -30,14 +39,20 @@ const router = createRouter({
     routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
     const userStore = useUserStore()
+    if (!userStore.user) {
+        try {
+            await userStore.loadUser()
+        } catch {}
+    }
 
-    if (to.meta?.requiresAuth && !userStore.user && !userStore.accessToken) {
+    if (to.meta?.requiresAuth && !userStore.user) {
+        console.log('redirect to login')
         return { name: 'login', query: { redirect: to.fullPath }, replace: true }
     }
 
-    if (to.meta?.guestOnly && userStore.user && userStore.accessToken) {
+    if (to.meta?.guestOnly && userStore.user) {
         return { name: 'home', replace: true }
     }
 

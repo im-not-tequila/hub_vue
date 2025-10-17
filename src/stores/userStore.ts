@@ -1,42 +1,22 @@
 import { defineStore } from 'pinia'
 import type { User } from '@/types/user'
 import * as userApi from '@/api/user.api'
-
+import { useNotificationsStore } from '@/stores/notificationsStore'
 
 interface UserState {
     user: User | null
-    accessToken: string | null
 }
-
 
 export const useUserStore = defineStore('user', {
     state: (): UserState => ({
-        user: null,
-        accessToken: null
+        user: null
     }),
 
     getters: {
-        isAuthenticated: (state) => !!state.accessToken && !!state.user,
+        isAuthenticated: (state) => !!state.user
     },
 
     actions: {
-        setToken(token: string) {
-            this.accessToken = token
-            localStorage.setItem('access_token', token)
-        },
-
-        clearToken() {
-            this.accessToken = null
-            localStorage.removeItem('access_token')
-        },
-
-        async loadTokensFromStorage() {
-            const token = localStorage.getItem('access_token')
-            if (token) {
-                this.accessToken = token
-            }
-        },
-
         async loadUser() {
             const { data } = await userApi.getProfile()
             this.setUser(data)
@@ -44,16 +24,20 @@ export const useUserStore = defineStore('user', {
 
         setUser(user: User | null) {
             this.user = user
+            // const notificationsStore = useNotificationsStore()
+            // notificationsStore.connect()
         },
 
         clearUser() {
             this.user = null
+            // const notificationsStore = useNotificationsStore()
+            // notificationsStore.disconnect()
         },
 
         logout() {
             this.clearUser()
-            this.clearToken()
+            // ⚠️ При необходимости можно вызвать API logout,
+            // чтобы удалить refresh_token на сервере
         }
-
     }
 })

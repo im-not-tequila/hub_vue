@@ -1,8 +1,8 @@
 <template>
   <Modal
       :modelValue="props.modelValue"
-      title="Новый документ"
-      :desc="desc"
+      :title="modalTitle"
+      :desc="modalDescription"
       class-name="w-[80vw] h-[90vh]"
   >
     <template #body>
@@ -41,41 +41,9 @@
             class="no-scrollbar relative mx-auto p-4"
         >
           <ComponentCard>
-          <form class="space-y-6">
-            <BaseInput
-                v-model="form.document_name"
-                label="Название документа"
-                placeholder="Введите название документа"
-                :is_error="errors.document_name"
-                @change="errors.document_name = false"
-                required
-            />
+            <CreateDocForm107 v-if="selectedDocumentType?.id === 107" v-model="form107"/>
 
-            <SelectInput
-                v-model="form.recipient_id"
-                :options="tutorsWithPositionOptions"
-                label="Кому:"
-                placeholder="Выберите кому отправить"
-                :is_error="errors.recipient"
-                @change="errors.recipient = false"
-                required
-
-            />
-
-            <MultiSelectInput
-                v-model="approversSelectedOptions"
-                :options="tutorsWithPositionOptions"
-                label="Согласующие:"
-                placeholder="Выберите согласующих"
-                clearable
-            />
-
-            <Dropzone
-                @update:file="form.file = $event"
-                acceptedFiles="application/pdf, image/jpeg"
-                placeholder="Перетащите сюда PDF или JPG файл"
-            />
-          </form>
+            <CreateDocForm v-else v-model="form"/>
           </ComponentCard>
         </div>
 
@@ -120,10 +88,20 @@
     </template>
   </Modal>
 
-  <ErrorModal
-      v-model="messageModal"
-      :error-message="errors.errorMessage ?? ''"
-      @close="errors.errorMessage = null"
+  <MessageModal
+      v-model="errorMessage.isOpen"
+      variant="error"
+      :title="errorMessage.title"
+      :message="errorMessage.message"
+      @close="errorMessage.isOpen = false"
+  />
+
+  <MessageModal
+      v-model="infoMessage.isOpen"
+      variant="success"
+      :title="infoMessage.title"
+      :message="infoMessage.message"
+      @close="infoMessage.isOpen = false"
   />
 
 </template>
@@ -141,55 +119,56 @@ import {
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import Modal from "@/components/ui/Modal.vue";
 import BaseButton from "@/components/ui/BaseButton.vue";
-import BaseInput from "@/components/ui/BaseInput.vue";
-import SelectInput from "@/components/ui/SelectInput.vue";
-import MultiSelectInput from "@/components/ui/MultiSelectInput.vue";
-import Dropzone from "@/components/ui/Dropzone.vue";
 import type { MultiSelectOption }  from "@/components/ui/MultiSelectInput.vue";
 
 import { loadTutorsWithPositionOptions } from "@/modules/docs/composables/tutorsWithPosition";
 import { documentUpload, allDocumentTypesAndCategories } from "@/modules/docs/api/docs.api";
-import { DocumentUploadRequest } from "@/modules/docs/types/request";
 import { AllDocumentTypesAndCategoryResponse } from "@/modules/docs/types/response";
 import { DocumentType } from "@/modules/docs/types/doc";
 import { signDocument } from "@/modules/docs/composables/signDocument";
 import {useUiStore} from "@/stores/uiStore";
-import ErrorModal from "@/components/ui/ErrorModal.vue";
-import {AxiosError} from "axios";
+import MessageModal from "@/components/ui/MessageModal.vue";
+import CreateDocForm from "@/modules/docs/components/CreateDocForm.vue";
+import CreateDocForm107 from "@/modules/docs/components/CreateDocForm107.vue";
+import {
+  CreateDocForm as CreateDocFormType,
+  CreateDocForm107 as CreateDocForm107Type,
+} from "@/modules/docs/types/form";
 
 
-const uiStore = useUiStore()
+type InfoMessage = {
+  isOpen: boolean,
+  title: string,
+  message: string
+}
 
+type ErrorMessage = {
+  isOpen: boolean,
+  title: string,
+  message: string
+}
 
-const messageModal = ref(false)
+const infoMessage = reactive<InfoMessage>({
+  isOpen: false,
+  title: 'Готово',
+  message: ''
+})
+
+const errorMessage = reactive<ErrorMessage>({
+  isOpen: false,
+  title: 'Ошибка',
+  message: ''
+})
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
 })
 
-const form = reactive<DocumentUploadRequest>({
-  document_name: '',
-  document_type_id: null as unknown as number,
-  recipient_id: null as unknown as number,
-  approver_user_ids: [],
-  cms: '',
-  file: null as unknown as File
-})
-
-type Errors = {
-  errorMessage: string | null
-  document_name: boolean
-  recipient: boolean
-}
-
-const errors = reactive<Errors>({
-  errorMessage: null,
-  document_name: false,
-  recipient: false,
-})
-
-const hasError = computed(() => Object.values(errors).some(Boolean))
-
+const uiStore = useUiStore()
+const form = reactive(getDefaultForm())
+const form107 = reactive(getDefaultForm107())
+const hasErrorDefault = computed(() => Object.values(form.errors).some(Boolean))
+const hasError107 = computed(() => Object.values(form107.errors).some(Boolean))
 const approversSelectedOptions = ref<MultiSelectOption[]>([])
 const selectedDocumentType = ref<DocumentType | null>(null)
 const tutorsWithPositionOptions = ref<MultiSelectOption[]>([])
@@ -202,8 +181,8 @@ const canGoNext = computed(() => {
 
   if (currentStep.value === 2) {
     if (
-        (form.document_name === '') ||
-        (!form.recipient_id) ||
+        (form.documentName === '') ||
+        (!form.recipientId) ||
         (!form.file)
     ) return false
   }
@@ -211,7 +190,15 @@ const canGoNext = computed(() => {
   return true
 })
 
-const desc = computed(() => {
+const modalTitle = computed(() => {
+  if ((selectedDocumentType.value) && (currentStep.value === 2)) {
+    return selectedDocumentType.value.name + " (№" + selectedDocumentType.value.id + ")"
+  }
+
+  return "Новый документ"
+})
+
+const modalDescription = computed(() => {
   if ((currentStep.value === 1) && (selectedDocumentType.value !== null)) {
     return "Вы выбрали: " + selectedDocumentType.value.name
   }
@@ -231,6 +218,35 @@ onMounted(async () => {
   documentTypesAndCategories.value = response.data
 })
 
+function getDefaultForm(): CreateDocFormType {
+  return {
+    documentName: '',
+    recipientId: null as unknown as number,
+    approversSelectedOptions: [],
+    file: null as unknown as File,
+    errors: {
+      documentName: false,
+      recipientId: false,
+    },
+  }
+}
+
+function getDefaultForm107(): CreateDocForm107Type {
+  return {
+    tripDateStart: '',
+    tripDateEnd: '',
+    fundingSource: null as unknown as number,
+    tripPurpose: '',
+    file: null as unknown as File,
+    errors: {
+      tripDateStart: false,
+      tripDateEnd: false,
+      fundingSource: false,
+      tripPurpose: false,
+    },
+  }
+}
+
 function closeModal() {
   emit('close') // 🔹 Родитель изменит modalIsOpen
   resetForm()
@@ -242,19 +258,16 @@ function resetForm(formNumber: number | null = null) {
   }
 
   if (formNumber === 2) {
-    approversSelectedOptions.value = []
-    form.recipient_id = null as unknown as number
-    form.document_name = ''
-    errors.document_name = false
-    errors.recipient = false
+    Object.assign(form, getDefaultForm())
+    Object.assign(form107, getDefaultForm())
   }
 
   if (formNumber === null) {
     currentStep.value = 1
     selectedDocumentType.value = null
     approversSelectedOptions.value = []
-    form.recipient_id = null as unknown as number
-    form.document_name = ''
+    form.recipientId = null as unknown as number
+    form.documentName = ''
   }
 }
 
@@ -278,23 +291,74 @@ function selectDocumentTypeClick(documentType: DocumentType) {
   selectedDocumentType.value = documentType
 }
 
-async function signDocumentClick() {
-  if (form.document_name === ''){errors.document_name = true}
-  if (!form.recipient_id){errors.recipient = true}
+async function signDocumentDefault() {
+  if (form.documentName === ''){form.errors.documentName = true}
+  if (!form.recipientId){form.errors.recipientId = true}
+  if (!selectedDocumentType.value?.id){return}
 
-  if (hasError.value) return
-
-  uiStore.showLoader()
+  if (hasErrorDefault.value) return
 
   try {
-    form.document_type_id = selectedDocumentType.value?.id ?? 0
-    form.approver_user_ids = approversSelectedOptions.value.map(option => option.value as number)
-    form.cms = await signDocument(form.file)
-    await documentUpload(form)
+    let formData = new FormData()
+
+    formData.append('document_name', form.documentName)
+    formData.append('document_type_id', selectedDocumentType.value?.id.toString())
+    formData.append('recipient_id', form.recipientId.toString())
+    formData.append('signature', await signDocument(form.file))
+    formData.append('file', form.file)
+    formData.append('approver_user_ids', JSON.stringify(form.approversSelectedOptions.map(option => option.value as number)))
+
+    await documentUpload(formData)
+
+    infoMessage.message = 'Документ успешно отправлен'
+    infoMessage.isOpen = true
   } catch (error) {
-    errors.errorMessage = 'Что-то случилось.'
-    console.log(error)
-    messageModal.value = true
+    errorMessage.message = 'Что-то случилось.'
+    errorMessage.isOpen = true
+  }
+
+  emit('submitted')
+  closeModal()
+}
+
+async function signDocument107() {
+  if (form107.tripDateStart === ''){form107.errors.tripDateStart = true}
+  if (form107.tripDateEnd === ''){form107.errors.tripDateEnd = true}
+  if (form107.fundingSource === null){form107.errors.fundingSource = true}
+  if (form107.tripPurpose === ''){form107.errors.tripPurpose = true}
+
+  if (hasError107.value) return
+
+  try {
+    let formData = new FormData()
+
+    formData.append('document_name', form.documentName)
+    formData.append('document_type_id', selectedDocumentType.value?.id.toString())
+    formData.append('recipient_id', form.recipientId.toString())
+    formData.append('signature', await signDocument(form.file))
+    formData.append('file', form.file)
+    formData.append('approver_user_ids', JSON.stringify(form.approversSelectedOptions.map(option => option.value as number)))
+
+    await documentUpload(formData)
+
+    infoMessage.message = 'Документ успешно отправлен'
+    infoMessage.isOpen = true
+  } catch (error) {
+    errorMessage.message = 'Что-то случилось.'
+    errorMessage.isOpen = true
+  }
+
+  emit('submitted')
+  closeModal()
+}
+
+async function signDocumentClick() {
+  uiStore.showLoader()
+
+  if (selectedDocumentType.value?.id === 107) {
+    await signDocument107()
+  } else {
+    await signDocumentDefault()
   }
 
   uiStore.hideLoader()

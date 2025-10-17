@@ -237,15 +237,15 @@ const menuGroups = [
     title: "",
     items: [
       {
-        icon: UserCircleIcon,
+        icon: DocsIcon,
         name: "Документы",
         path: "/docs",
       },
-      // {
-      //   icon: UserCircleIcon,
-      //   name: "Тестовая страница",
-      //   path: "/test",
-      // }
+      {
+        icon: TableIcon,
+        name: "Журнал посещений",
+        path: "/visit-history",
+      }
     ],
   },
 ];

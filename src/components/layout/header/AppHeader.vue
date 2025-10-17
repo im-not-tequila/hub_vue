@@ -90,7 +90,7 @@ import { useSidebar } from '@/composables/useSidebar'
 import ThemeToggler from '../../common/ThemeToggler.vue'
 import SearchBar from './SearchBar.vue'
 import HeaderLogo from './HeaderLogo.vue'
-import NotificationMenu from './NotificationMenu.vue'
+import NotificationMenu from './notifications/views/NotificationMenu.vue'
 import UserMenu from './UserMenu.vue'
 
 

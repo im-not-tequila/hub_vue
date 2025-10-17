@@ -24,6 +24,7 @@ export interface IncomingResponse {
     type_id: number
     create_datetime: string
     status: DocumentStatus
+    is_hidden: boolean
 }
 
 export interface OutgoingResponse {
@@ -36,5 +37,6 @@ export interface OutgoingResponse {
     type_id: number
     create_datetime: string
     status: DocumentStatus
+    is_hidden: boolean
 }
 

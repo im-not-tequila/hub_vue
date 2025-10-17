@@ -2,9 +2,7 @@ import httpClient from '@/api/httpClient'
 
 import {
     DocumentUploadRequest,
-    DocumentSignRequest,
-    DocumentCancelRequest,
-    DocumentExecuteRequest
+    DocumentSignRequest
 } from "@/modules/docs/types/request";
 
 import {
@@ -21,34 +19,46 @@ export const allTutorsWithPosition = (lang: 'ru' | 'kz' | 'en' = 'ru') =>
     })
 
 export const allDocumentTypesAndCategories = (lang: 'ru' | 'kz' | 'en' = 'ru') =>
-    httpClient.get<AllDocumentTypesAndCategoryResponse[]>('/doc/types_and_categories', {
+    httpClient.get<AllDocumentTypesAndCategoryResponse[]>('/doc/types-and-categories', {
         params: { lang },
     })
 
-export const documentUpload = (data: DocumentUploadRequest) => {
-    const formData = new FormData()
-    formData.append('document_name', data.document_name)
-    formData.append('document_type_id', data.document_type_id.toString())
-    formData.append('recipient_id', data.recipient_id.toString())
-    formData.append('cms', data.cms)
-    formData.append('file', data.file)
-    formData.append('approver_user_ids', JSON.stringify(data.approver_user_ids))
+export const documentUpload = (formData: FormData) => {
+    // const formData = new FormData()
+    // formData.append('document_name', data.document_name)
+    // formData.append('document_type_id', data.document_type_id.toString())
+    // formData.append('recipient_id', data.recipient_id.toString())
+    // formData.append('signature', data.cms)
+    // formData.append('file', data.file)
+    // formData.append('approver_user_ids', JSON.stringify(data.approver_user_ids))
 
     return httpClient.post('/doc/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     })
 }
 
-export const documentSign = (data: DocumentSignRequest) => {
-    return httpClient.post(`/doc/sign`, data)
+export const documentSign = (document_id: number, data: DocumentSignRequest) => {
+    return httpClient.post(`/doc/${document_id}/sign`, data)
 }
 
-export const documentCancel = (data: DocumentCancelRequest) => {
-    return httpClient.post(`/doc/cancel`, data)
+export const documentCancel = (document_id: number) => {
+    return httpClient.post(`/doc/${document_id}/cancel`)
 }
 
-export const documentExecute = (data: DocumentExecuteRequest) => {
-    return httpClient.post(`/doc/execute`, data)
+export const documentExecute = (document_id: number) => {
+    return httpClient.post(`/doc/${document_id}/execute`)
+}
+
+export const documentRevoke = (document_id: number) => {
+    return httpClient.post(`/doc/${document_id}/revoke`)
+}
+
+export const documentHide = (document_id: number) => {
+    return httpClient.post(`/doc/${document_id}/hide`)
+}
+
+export const documentUnhide = (document_id: number) => {
+    return httpClient.post(`/doc/${document_id}/unhide`)
 }
 
 export const documentIncoming = () => {
@@ -60,7 +70,7 @@ export const documentOutgoings = () => {
 }
 
 export const documentPendingExecution = () => {
-    return httpClient.get<OutgoingResponse[]>('/doc/pending_execution')
+    return httpClient.get<OutgoingResponse[]>('/doc/pending-execution')
 }
 
 export const documentExecuted = () => {
@@ -68,8 +78,7 @@ export const documentExecuted = () => {
 }
 
 export const documentPdf = (document_id: number) => {
-    return httpClient.get(`/doc/pdf`, {
-        params: { document_id },
+    return httpClient.get(`/doc/${document_id}/pdf`, {
         responseType: 'blob',
     })
 }

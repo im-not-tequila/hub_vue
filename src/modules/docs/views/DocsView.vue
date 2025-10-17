@@ -4,7 +4,7 @@
     <CreateDocView
         :modelValue="modalIsOpen"
         @close="modalIsOpen = false"
-        @submitted="refreshData"
+        @submitted="refreshData; activeTab = 'outgoing'"
     />
 
     <ShowPdfView
@@ -22,10 +22,10 @@
             <div class="inline-flex rounded-lg border border-gray-200 p-0.5 dark:border-gray-800">
               <button
                   type="button"
-                  class="px-3 py-1.5 text-sm rounded-md transition"
+                  class="px-3 py-1.5 font-medium rounded-md transition"
                   :class="activeTab === 'incoming'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'"
+                  ? 'bg-brand-500 text-white shadow-theme-xs'
+                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
                   @click="setActiveTab('incoming')"
               >
                 Входящие
@@ -33,10 +33,10 @@
 
               <button
                   type="button"
-                  class="px-3 py-1.5 text-sm rounded-md transition"
+                  class="px-3 py-1.5 font-medium rounded-md transition"
                   :class="activeTab === 'outgoing'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'"
+                  ? 'bg-brand-500 text-white shadow-theme-xs '
+                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
                   @click="setActiveTab('outgoing')"
               >
                 Исходящие
@@ -44,10 +44,10 @@
 
               <button
                   type="button"
-                  class="px-3 py-1.5 text-sm rounded-md transition"
+                  class="px-3 py-1.5 font-medium rounded-md transition"
                   :class="activeTab === 'pendingExecution'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'"
+                  ? 'bg-brand-500 text-white shadow-theme-xs '
+                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
                   @click="setActiveTab('pendingExecution')"
               >
                 На исполнении
@@ -55,16 +55,16 @@
 
               <button
                   type="button"
-                  class="px-3 py-1.5 text-sm rounded-md transition"
+                  class="px-3 py-1.5 font-medium rounded-md transition"
                   :class="activeTab === 'executed'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10'"
+                  ? 'bg-brand-500 text-white shadow-theme-xs'
+                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
                   @click="setActiveTab('executed')"
               >
                 Исполненные
               </button>
-
             </div>
+
             <BaseButton
                 :size="'sm'"
                 :start-icon="PlusIcon"
@@ -75,40 +75,68 @@
               Создать
             </BaseButton>
           </div>
+
+          <div class="inline-flex gap-3 pt-4">
+            <CheckboxInput v-model="filters.signed" label="Согласованные"/>
+            <CheckboxInput v-model="filters.pending" label="На согласовании"/>
+            <CheckboxInput v-model="filters.rejected" label="Отклоненные"/>
+            <CheckboxInput v-model="filters.hidden" label="Скрытые"/>
+          </div>
+
         </template>
 
         <TableView
             v-if="(activeTab === 'incoming') && incoming.length !== 0"
             :docs="searchIncoming(slotProps.search)"
+            :show-hidden="filters.hidden"
+            :show-signed="filters.signed"
+            :show-pending="filters.pending"
+            :show-rejected="filters.rejected"
             @view="viewDocument"
             @download="downloadDocument"
-            @delete="deleteDocument"
+            @hide="hideDocument"
+            @unhide="unhideDocument"
         />
 
         <TableView
             v-else-if="(activeTab === 'outgoing') && outgoing.length !== 0"
             :docs="searchOutgoing(slotProps.search)"
+            :show-hidden="filters.hidden"
+            :show-signed="filters.signed"
+            :show-pending="filters.pending"
+            :show-rejected="filters.rejected"
             @view="viewDocument"
             @download="downloadDocument"
-            @delete="deleteDocument"
+            @revoke="revokeDocument"
+            @hide="hideDocument"
+            @unhide="unhideDocument"
         />
 
         <TableView
             v-else-if="(activeTab === 'pendingExecution') && pendingExecution.length !== 0"
             :docs="searchPendingExecution(slotProps.search)"
+            :show-hidden="filters.hidden"
+            :show-signed="filters.signed"
+            :show-pending="filters.pending"
+            :show-rejected="filters.rejected"
             @view="viewDocument"
             @download="downloadDocument"
-            @delete="deleteDocument"
+            @hide="hideDocument"
+            @unhide="unhideDocument"
         />
 
         <TableView
             v-else-if="(activeTab === 'executed') && executed.length !== 0"
             :docs="searchExecuted(slotProps.search)"
+            :show-hidden="filters.hidden"
+            :show-signed="filters.signed"
+            :show-pending="filters.pending"
+            :show-rejected="filters.rejected"
             @view="viewDocument"
             @download="downloadDocument"
-            @delete="deleteDocument"
+            @hide="hideDocument"
+            @unhide="unhideDocument"
         />
-
 
         <div v-else class="flex items-center justify-center h-64">
 
@@ -166,7 +194,7 @@
 <script setup lang="ts">
 import {
   ref,
-  onMounted
+  onMounted, reactive
 } from 'vue'
 
 import AdminLayout from '@/components/layout/AdminLayout.vue';
@@ -180,14 +208,15 @@ import TableView from "@/modules/docs/views/TableView.vue";
 import ShowPdfView from "@/modules/docs/views/ShowPdfView.vue";
 import { IncomingResponse, OutgoingResponse } from "@/modules/docs/types/response";
 import {
-  documentExecuted,
+  documentExecuted, documentHide, documentUnhide,
   documentIncoming,
   documentOutgoings,
   documentPdf,
-  documentPendingExecution
+  documentPendingExecution, documentRevoke
 } from "@/modules/docs/api/docs.api";
 
 import Loader from "@/components/layout/Loader.vue";
+import CheckboxInput from "@/components/ui/CheckboxInput.vue";
 
 const layoutRef = ref<any>(null)
 
@@ -201,8 +230,21 @@ const outgoing = ref<OutgoingResponse[]>([])
 const pendingExecution = ref<OutgoingResponse[]>([])
 const executed = ref<OutgoingResponse[]>([])
 
-const selectedDoc = ref<IncomingResponse | OutgoingResponse | null>(null)
+type Filters = {
+  signed: boolean,
+  pending: boolean,
+  rejected: boolean,
+  hidden: boolean
+}
 
+const filters = reactive<Filters>({
+  signed: true,
+  pending: true,
+  rejected: true,
+  hidden: false,
+})
+
+const selectedDoc = ref<IncomingResponse | OutgoingResponse | null>(null)
 
 const searchIncoming = (query: string) => {
   if (!query) return incoming.value
@@ -278,13 +320,14 @@ onMounted(async () => {
 
 const isLoadingDocs = ref(false)
 
-
 function setActiveTab(tab: 'incoming' | 'outgoing' | 'pendingExecution' | 'executed') {
   layoutRef.value.search = ''
   activeTab.value = tab
 }
+
 async function refreshData() {
   isLoadingDocs.value = true
+
   const inResponse = await documentIncoming()
   const outResponse = await documentOutgoings()
   const pendingExecutionResponse = await documentPendingExecution()
@@ -294,6 +337,7 @@ async function refreshData() {
   outgoing.value = outResponse.data
   pendingExecution.value = pendingExecutionResponse.data
   executed.value = executedResponse.data
+
   isLoadingDocs.value = false
 }
 
@@ -325,12 +369,19 @@ async function downloadDocument(doc: IncomingResponse | OutgoingResponse) {
   }
 }
 
-function deleteDocument(id: number) {
-  if (activeTab.value === 'incoming') {
-    incoming.value = incoming.value.filter(d => d.id !== id)
-  } else {
-    outgoing.value = outgoing.value.filter(d => d.id !== id)
-  }
+async function revokeDocument(id: number) {
+  await documentRevoke(id)
+  await refreshData()
+}
+
+async function hideDocument(id: number) {
+  await documentHide(id)
+  await refreshData()
+}
+
+async function unhideDocument(id: number) {
+  await documentUnhide(id)
+  await refreshData()
 }
 
 function createDocumentClick() {

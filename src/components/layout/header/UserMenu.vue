@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img v-if="avatarSrc" :src="avatarSrc" alt="User" />
+        <img v-if="avatarSrc" :src="avatarSrc" alt="User" @error="onAvatarError"/>
       </span>
 
       <span v-if="user" class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
@@ -60,10 +60,10 @@
 <script setup lang="ts">
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/components/icons'
 import {RouterLink} from 'vue-router'
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { useUserStore } from "@/stores/userStore.js";
 import { User } from "@/types/user.js";
-import {useAvatars} from "@/composables/useAvatars";
+import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 
 
 const props = defineProps<{
@@ -76,8 +76,7 @@ const user = computed(() => props.user ?? userStore.user ?? null)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-const { getAvatarSrc } = useAvatars()
-const avatarSrc = ref<string | null>(null)
+const avatarSrc = `${import.meta.env.VITE_API_URL}/user/${user.value?.id}/avatar`
 
 
 
@@ -106,13 +105,12 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-onMounted(async () => {
-  document.addEventListener('click', handleClickOutside)
-  avatarSrc.value = await getAvatarSrc(userStore.user?.id)
-})
-
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+function onAvatarError(event) {
+  event.target.src = noUserpicUrl
+}
 
 </script>

@@ -8,16 +8,7 @@ export interface DocumentUploadRequest {
 }
 
 export interface DocumentSignRequest {
-    document_id: number
     resolution: string | null
     executors: number[]
-    cms: string
-}
-
-export interface DocumentExecuteRequest {
-    document_id: number
-}
-
-export interface DocumentCancelRequest {
-    document_id: number
+    signature: string
 }

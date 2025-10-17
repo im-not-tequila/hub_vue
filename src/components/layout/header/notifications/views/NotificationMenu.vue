@@ -65,7 +65,7 @@
             href="#"
           >
             <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
-              <img :src="notification.userImage" alt="User" class="overflow-hidden rounded-full" />
+              <img :src="systemAvatar" alt="User" class="overflow-hidden rounded-full" />
               <span
                 :class="notification.status === 'online' ? 'bg-success-500' : 'bg-error-500'"
                 class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"
@@ -75,16 +75,17 @@
             <span class="block">
               <span class="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
                 <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.userName }}
+                  Система
                 </span>
-                {{ notification.action }}
-                <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.project }}
-                </span>
+
+                <br>
+
+                {{ notification.message }}
+
               </span>
 
               <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                <span>{{ notification.type }}</span>
+                <span>Система</span>
                 <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
                 <span>{{ notification.time }}</span>
               </span>
@@ -109,12 +110,14 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import systemAvatar from '@/assets/system.png'
+import {notifications as getNotifications} from "@/components/layout/header/notifications/api/notifications.api.js";
 
 const dropdownOpen = ref(false)
 const notifying = ref(true)
 const dropdownRef = ref(null)
+const notifications = ref([])
 
-const notifications = ref([
+const notifications_ = ref([
   {
     id: 1,
     userName: 'Добро пожаловать',
@@ -157,9 +160,17 @@ const handleViewAllClick = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  loadNotifications()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+async function loadNotifications() {
+  const { data } = await getNotifications()
+  notifications.value = data ?? []
+  console.log('📬 Уведомлений:', notifications.value.length)
+  console.log('📝 Сами уведомления:', notifications.value)
+}
 </script>

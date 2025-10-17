@@ -1,25 +1,18 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
 
-
 const httpClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
-    withCredentials: true,
+    withCredentials: true,              // ⚡ отправляем куки на сервер
     headers: { 'Content-Type': 'application/json' },
-    timeout: 30000
+    timeout: 30000,
 })
 
-httpClient.interceptors.request.use((config) => {
-    const userStore = useUserStore()
-    if (userStore.accessToken) {
-        config.headers.Authorization = `Bearer ${userStore.accessToken}`
-    }
-    return config
-})
 
 async function refreshToken() {
+    // ⚡ Просто дергаем refresh, кука уже там
     const { data } = await httpClient.post<{ access_token: string, token_type: string }>('/auth/refresh_token')
-    return data.access_token;
+    return data.access_token // можешь вернуть или вообще не использовать — он всё равно в куке
 }
 
 httpClient.interceptors.response.use(
@@ -28,7 +21,6 @@ httpClient.interceptors.response.use(
         const userStore = useUserStore();
         const originalRequest = error.config;
 
-        // Если это 401 и не попытка refresh или auth
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
@@ -36,22 +28,14 @@ httpClient.interceptors.response.use(
         ) {
             originalRequest._retry = true;
             try {
-                const newAccessToken = await refreshToken();
-                userStore.setToken(newAccessToken);
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return httpClient(originalRequest);
+                await refreshToken()
+                // ❗ не надо обновлять токен в store — он живёт в куке
+                return httpClient(originalRequest)
             } catch (err) {
-                userStore.logout();
-                return Promise.reject(err);
+                userStore.logout()
+                return Promise.reject(err)
             }
         }
-        return Promise.reject(error);
-    }
-);
-
-httpClient.interceptors.response.use(
-    (response) => response,
-    (error) => {
 
         return Promise.reject(error)
     }

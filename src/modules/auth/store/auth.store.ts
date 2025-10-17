@@ -25,7 +25,6 @@ export const useAuthStore = defineStore('auth', {
                 const { data } = await authApi.platonusLogin(credentials)
 
                 userStore.setUser(data.user)
-                userStore.setToken(data.access_token)
                 return data
             } catch (error: any) {
                 this.error = 'Что-то случилось.'
@@ -51,7 +50,6 @@ export const useAuthStore = defineStore('auth', {
                 const { data } = await ecpLogin()
 
                 userStore.setUser(data.user)
-                userStore.setToken(data.access_token)
 
                 return data
             } catch (error: any) {
@@ -76,7 +74,6 @@ export const useAuthStore = defineStore('auth', {
         logout() {
             const userStore = useUserStore()
             userStore.clearUser()
-            userStore.clearToken()
             authApi.logout()
         },
     },

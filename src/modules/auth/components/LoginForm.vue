@@ -1,8 +1,9 @@
 <template>
-  <ErrorModal
-      v-if="errors.errorMessage"
+  <MessageModal
       v-model="messageModal"
-      :error-message="errors.errorMessage"
+      title="Произошла ошибка"
+      :message="errors.errorMessage ?? ''"
+      :variant="'error'"
       @close="errors.errorMessage = null"
   />
 
@@ -109,7 +110,7 @@ import { PlatonusLoginRequest } from '../types/auth'
 import BaseButton from "@/components/ui/BaseButton.vue";
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Divider from '@/components/ui/Divider.vue'
-import ErrorModal from "@/components/ui/ErrorModal.vue";
+import MessageModal from "@/components/ui/MessageModal.vue";
 import {useUiStore} from "@/stores/uiStore";
 
 

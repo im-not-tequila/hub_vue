@@ -22,15 +22,15 @@ const userStore = useUserStore()
 const authStore = useAuthStore()
 
 onMounted(async () => {
-  await userStore.loadTokensFromStorage()
-
-  if (userStore.accessToken) {
-    try {
-      await userStore.loadUser()
-    } catch (error) {
-      authStore.logout()
-    }
-  }
+  // await userStore.loadTokensFromStorage()
+  //
+  // if (userStore.accessToken) {
+  //   try {
+  //     await userStore.loadUser()
+  //   } catch (error) {
+  //     authStore.logout()
+  //   }
+  // }
 })
 
 </script>

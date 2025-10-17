@@ -168,7 +168,7 @@
       </div>
     </template>
   </Modal>
-  <ErrorModal
+  <MessageModal
       v-model="messageModal"
       :error-message="errors.errorMessage ?? ''"
       @close="errors.errorMessage = null"
@@ -190,7 +190,7 @@ import {loadTutorsWithPositionOptions} from "@/modules/docs/composables/tutorsWi
 import {signDocument} from "@/modules/docs/composables/signDocument";
 import {DocumentSignRequest} from "@/modules/docs/types/request";
 import {AxiosError} from "axios";
-import ErrorModal from "@/components/ui/ErrorModal.vue";
+import MessageModal from "@/components/ui/MessageModal.vue";
 import {useUserStore} from "@/stores/userStore";
 
 
@@ -332,10 +332,9 @@ function prevStep() {
 }
 
 const signForm = reactive<DocumentSignRequest>({
-  document_id: null as unknown as number,
   resolution: null,
   executors: [],
-  cms: '',
+  signature: '',
 })
 
 async function signDocumentClick() {
@@ -343,13 +342,12 @@ async function signDocumentClick() {
 
   const pdfFile = new File([pdfBlob.value], `${props.doc?.id}.pdf`, { type: 'application/pdf' });
 
-  signForm.document_id = props.doc?.id as unknown as number
   signForm.executors = executorsSelectedOptions.value.map(option => option.value as number)
-  signForm.cms = await signDocument(pdfFile)
+  signForm.signature = await signDocument(pdfFile)
 
-  await documentSign(signForm)
+  await documentSign(props.doc?.id, signForm)
 
-  console.log(signForm.cms)
+  console.log(signForm.signature)
   closeModal()
 }
 
@@ -357,7 +355,7 @@ async function cancelDocumentClick() {
   if (!props.doc?.id) return;
 
   try {
-    await documentCancel({'document_id': props.doc?.id})
+    await documentCancel(props.doc?.id)
     closeModal()
   } catch (error) {
     errors.errorMessage = 'Что-то случилось.'
@@ -369,7 +367,7 @@ async function executeDocumentClick() {
   if (!props.doc?.id) return;
 
   try {
-    await documentExecute({'document_id': props.doc?.id})
+    await documentExecute(props.doc?.id)
     closeModal()
   } catch (error) {
     errors.errorMessage = 'Что-то случилось.'
