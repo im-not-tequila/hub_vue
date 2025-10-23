@@ -64,6 +64,7 @@ import { ref, onUnmounted, computed } from 'vue'
 import { useUserStore } from "@/stores/userStore.js";
 import { User } from "@/types/user.js";
 import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
+import {useRouter} from "vue-router";
 
 
 const props = defineProps<{
@@ -77,7 +78,7 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
 const avatarSrc = `${import.meta.env.VITE_API_URL}/user/${user.value?.id}/avatar`
-
+const router = useRouter()
 
 
 const menuItems = [
@@ -94,8 +95,10 @@ const closeDropdown = () => {
   dropdownOpen.value = false
 }
 
-const signOut = () => {
-  userStore.logout()
+const signOut = async () => {
+  await userStore.logout()
+
+  await router.push('/login')
   closeDropdown()
 }
 

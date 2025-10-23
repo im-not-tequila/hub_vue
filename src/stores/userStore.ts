@@ -3,6 +3,10 @@ import type { User } from '@/types/user'
 import * as userApi from '@/api/user.api'
 import { useNotificationsStore } from '@/stores/notificationsStore'
 
+
+
+
+
 interface UserState {
     user: User | null
 }
@@ -34,10 +38,11 @@ export const useUserStore = defineStore('user', {
             // notificationsStore.disconnect()
         },
 
-        logout() {
+        async logout() {
+
+            await userApi.logout()
             this.clearUser()
-            // ⚠️ При необходимости можно вызвать API logout,
-            // чтобы удалить refresh_token на сервере
+
         }
     }
 })
