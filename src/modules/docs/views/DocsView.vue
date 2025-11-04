@@ -4,7 +4,7 @@
     <CreateDocView
         :modelValue="modalIsOpen"
         @close="modalIsOpen = false"
-        @submitted="refreshData; activeTab = 'outgoing'"
+        @submitted="refreshData(); activeTab = 'outgoing'"
     />
 
     <ShowPdfView
@@ -194,7 +194,9 @@
 <script setup lang="ts">
 import {
   ref,
-  onMounted, reactive
+  onMounted,
+  reactive,
+  watch
 } from 'vue'
 
 import AdminLayout from '@/components/layout/AdminLayout.vue';
@@ -207,6 +209,7 @@ import CreateDocView from "@/modules/docs/views/CreateDocView.vue";
 import TableView from "@/modules/docs/views/TableView.vue";
 import ShowPdfView from "@/modules/docs/views/ShowPdfView.vue";
 import { IncomingResponse, OutgoingResponse } from "@/modules/docs/types/response";
+import { useRoute, useRouter } from 'vue-router'
 import {
   documentExecuted, documentHide, documentUnhide,
   documentIncoming,
@@ -218,6 +221,9 @@ import {
 import Loader from "@/components/layout/Loader.vue";
 import CheckboxInput from "@/components/ui/CheckboxInput.vue";
 
+
+const route = useRoute()
+const router = useRouter()
 const layoutRef = ref<any>(null)
 
 const currentPageTitle = ref('Документы')
@@ -319,6 +325,23 @@ onMounted(async () => {
 })
 
 const isLoadingDocs = ref(false)
+
+watch(
+    () => route.query.doc_id,
+    async(docId) => {
+      if (docId) {
+        await refreshData()
+        // получаем документ из таблицы, стора или API
+        // пример:
+        const doc = incoming.value.find(doc => doc.id === Number(docId))
+        // const doc = getDocById(Number(docId))
+        viewDocument(doc)
+      } else {
+        selectedDoc.value = null
+      }
+    },
+    { immediate: true }
+)
 
 function setActiveTab(tab: 'incoming' | 'outgoing' | 'pendingExecution' | 'executed') {
   layoutRef.value.search = ''

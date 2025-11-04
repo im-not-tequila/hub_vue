@@ -18,12 +18,12 @@
       v-if="dropdownOpen"
       class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
     >
-      <div>
-        <span v-if="user" class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
+      <div v-if="user">
+        <span  class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
           {{ user.lastname }} {{ user.firstname }} {{ user.patronymic }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-<!--          randomuser@pimjo.com-->
+          {{ user.structural_subdivision }}
         </span>
       </div>
 
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/components/icons'
 import {RouterLink} from 'vue-router'
-import { ref, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from "@/stores/userStore.js";
 import { User } from "@/types/user.js";
 import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
@@ -107,6 +107,10 @@ const handleClickOutside = (event: MouseEvent) => {
     closeDropdown()
   }
 }
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)

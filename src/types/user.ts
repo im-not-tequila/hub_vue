@@ -4,5 +4,6 @@ export interface User {
     lastname: string
     patronymic: string | null
     shortname: string
+    structural_subdivision: string
 }
 

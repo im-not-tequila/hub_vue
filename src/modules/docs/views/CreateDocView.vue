@@ -50,6 +50,7 @@
       </div>
 
     </template>
+
     <template #footer>
       <div class="flex justify-between">
         <BaseButton
@@ -134,6 +135,7 @@ import {
   CreateDocForm as CreateDocFormType,
   CreateDocForm107 as CreateDocForm107Type,
 } from "@/modules/docs/types/form";
+import axios from 'axios'
 
 
 type InfoMessage = {
@@ -253,6 +255,8 @@ function closeModal() {
 }
 
 function resetForm(formNumber: number | null = null) {
+  console.log('reset form')
+  console.log(formNumber)
   if (formNumber === 1) {
     selectedDocumentType.value = null
   }
@@ -265,7 +269,7 @@ function resetForm(formNumber: number | null = null) {
   if (formNumber === null) {
     currentStep.value = 1
     selectedDocumentType.value = null
-    approversSelectedOptions.value = []
+    form.approversSelectedOptions = []
     form.recipientId = null as unknown as number
     form.documentName = ''
   }
@@ -314,6 +318,23 @@ async function signDocumentDefault() {
     infoMessage.isOpen = true
   } catch (error) {
     errorMessage.message = 'Что-то случилось.'
+
+    if (axios.isAxiosError(error)) {
+      let error_code = error.response?.data?.detail?.code
+
+      switch (error_code) {
+        case 'INVALID_SIGNATURE':
+          errorMessage.message = 'Подпись, которую Вы отправили, некорректна.'
+          break
+        case 'IIN_MISMATCH':
+          errorMessage.message = 'ИИН Вашей ЭЦП не совпадает с ИИН Вашего аккаунта. Вы уверены, что используете верный ключ ЭЦП?'
+          break
+        case 'RECIPIENT_NOT_FOUND':
+          errorMessage.message = 'Пользователь, которому Вы отправляете документ, в базе не найден.'
+          break
+      }
+    }
+
     errorMessage.isOpen = true
   }
 

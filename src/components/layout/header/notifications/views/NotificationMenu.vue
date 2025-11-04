@@ -32,7 +32,7 @@
     <!-- Dropdown Start -->
     <div
       v-if="dropdownOpen"
-      class="absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
+      class="absolute -right-[240px] mt-[17px] flex min-h-[20vh] max-h-[50vh] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
     >
       <div
         class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800"
@@ -58,81 +58,115 @@
         </button>
       </div>
 
-      <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-        <li v-for="notification in notifications" :key="notification.id" @click="handleItemClick">
-          <a
-            class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
-            href="#"
+      <ul v-if="notificationsStore.notifications.length !== 0" class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
+        <li
+            v-for="notification in notificationsStore.notifications"
+            :key="notification.id"
+            class="relative"
+            @click="handleItemClick(notification)"
+        >
+          <div
+              class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 cursor-pointer"
           >
+            <!-- Аватар -->
             <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
-              <img :src="systemAvatar" alt="User" class="overflow-hidden rounded-full" />
-              <span
-                :class="notification.status === 'online' ? 'bg-success-500' : 'bg-error-500'"
-                class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"
-              ></span>
+              <img
+                  :src="getAvatar(notification.sender_user_id)"
+                  alt="User"
+                  class="overflow-hidden rounded-full"
+                  @error="onAvatarError"
+              />
             </span>
 
+            <!-- Текст уведомления -->
             <span class="block">
               <span class="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
                 <span class="font-medium text-gray-800 dark:text-white/90">
-                  Система
+                  {{ notification.title }}
                 </span>
 
-                <br>
+                <br />
 
                 {{ notification.message }}
-
               </span>
 
-              <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                <span>Система</span>
+              <span
+                  class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400"
+              >
+                <span>{{ notification.sender_name }}</span>
                 <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-                <span>{{ notification.time }}</span>
+                <span>
+                  {{ formatDate(notification.created_at) }}
+                </span>
               </span>
             </span>
-          </a>
+          </div>
+
+          <!-- ❌ Кнопка крестика -->
+          <button
+              @click.stop="notificationsMarkAsRead([notification.id])"
+              class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition"
+          >
+            <svg
+                class="fill-current"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
+              />
+            </svg>
+          </button>
         </li>
       </ul>
 
+      <div v-else class="mx-auto w-full text-center">
+        <h3
+            class="mb-4 font-semibold text-gray-800  dark:text-white/90 "
+        >
+          Уведомлений нет
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Как только Вам будет отправлено уведомление, оно появится тут
+        </p>
+      </div>
+
       <router-link
+          v-if="notificationsStore.notifications.length !== 0"
         to="#"
         class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         @click="handleViewAllClick"
       >
-        Посмотреть все уведомления
+        Скрыть все уведомления
       </router-link>
     </div>
     <!-- Dropdown End -->
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import systemAvatar from '@/assets/system.png'
-import {notifications as getNotifications} from "@/components/layout/header/notifications/api/notifications.api.js";
+import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
+import {useNotificationsStore} from "@/stores/notificationsStore";
+import router from "@/router";
+import {NotificationResponse} from "@/components/layout/header/notifications/types/notifications";
+import {notificationsMarkAsRead} from "@/components/layout/header/notifications/api/notifications.api";
 
+
+const notificationsStore = useNotificationsStore()
+const apiUrl = import.meta.env.VITE_API_URL
 const dropdownOpen = ref(false)
-const notifying = ref(true)
+const notifying = computed(() => notificationsStore.notifications.length !== 0)
 const dropdownRef = ref(null)
-const notifications = ref([])
-
-const notifications_ = ref([
-  {
-    id: 1,
-    userName: 'Добро пожаловать',
-    userImage: systemAvatar,
-    action: 'в наш новый новый ',
-    project: 'хаб!',
-    type: 'Система',
-    time: '5 минут назад',
-    status: 'online',
-  }
-])
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
-  notifying.value = false
 }
 
 const closeDropdown = () => {
@@ -145,32 +179,79 @@ const handleClickOutside = (event) => {
   }
 }
 
-const handleItemClick = (event) => {
-  event.preventDefault()
-  // Handle the item click action here
-  console.log('Notification item clicked')
+const handleItemClick = async (notification: NotificationResponse) => {
+  // event.preventDefault()
+  console.log(notification)
+
+  if (notification.other_data) {
+    const link = makeNotificationLink(notification.other_data)
+    if (link) router.push({ path: '/docs', query: { doc_id: notification.other_data.document_id } })
+
+  }
   closeDropdown()
+
+  await notificationsMarkAsRead([notification.id])
 }
 
-const handleViewAllClick = (event) => {
+const handleViewAllClick = async (event) => {
   event.preventDefault()
+
+  await notificationsMarkAsRead(notificationsStore.notifications.map(notification => notification.id))
 
   closeDropdown()
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  loadNotifications()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-async function loadNotifications() {
-  const { data } = await getNotifications()
-  notifications.value = data ?? []
-  console.log('📬 Уведомлений:', notifications.value.length)
-  console.log('📝 Сами уведомления:', notifications.value)
+function getAvatar(user_id: number | null): string {
+  if (!user_id) return systemAvatar
+  return apiUrl + "/user/" + user_id.toString() + "/avatar"
+}
+
+function onAvatarError(event) {
+  event.target.src = noUserpicUrl
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+
+  // Обнуляем время для сравнения дат
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = (today.getTime() - dateOnly.getTime()) / (1000 * 60 * 60 * 24);
+
+  const time = date.toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (diffDays === 0) {
+    return `сегодня, ${time}`;
+  } else if (diffDays === 1) {
+    return `вчера, ${time}`;
+  } else {
+    return date.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+}
+
+function makeNotificationLink(other_data: Record<string, any> | null): string {
+  if (!other_data) return "#";
+
+  if (other_data.type === 'incoming_document') {
+    return "/docs?doc_id=" + other_data.document_id;
+  }
 }
 </script>

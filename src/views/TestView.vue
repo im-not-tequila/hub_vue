@@ -1,54 +1,49 @@
 <template>
-  <div class="grid grid-cols-2 gap-4">
-    <div v-for="(items, category) in groupedOptions" :key="category" class="rounded-xl border shadow p-4">
-      <h3 class="font-semibold text-lg mb-2">{{ category }}</h3>
-      <div class="space-y-2">
-        <button
-            v-for="item in items"
-            :key="item.name"
-            @click="selectItem(item.name)"
-            class="block w-full rounded-lg border px-3 py-2 text-left hover:bg-blue-50"
+  <admin-layout ref="layoutRef" v-slot="slotProps">
+    <PageBreadcrumb :pageTitle="currentPageTitle" />
+
+    <div class="p-6">
+      <h1 class="text-2xl font-bold mb-6">Icon Gallery</h1>
+      <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-6">
+        <div
+            v-for="(icon, name) in icons"
+            :key="name"
+            class="flex flex-col items-center justify-center text-center text-sm"
         >
-          {{ item.name }} <span class="text-gray-400 text-sm">({{ item.count }})</span>
-        </button>
+          <component :is="icon" class="w-8 h-8 text-gray-700 dark:text-white" />
+          <span class="mt-2 text-xs break-all">{{ name }}</span>
+        </div>
       </div>
     </div>
-  </div>
+
+  </admin-layout>
 </template>
 
+<script setup lang="ts">
+import TableView from './TableView.vue'
+import AdminLayout from "@/components/layout/AdminLayout.vue";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+import {ref, defineAsyncComponent} from "vue";
 
-<script setup>
-import { ref } from 'vue'
-import Multiselect from 'vue-multiselect'
-import 'vue-multiselect/dist/vue-multiselect.css'
 
-const selectedDocument = ref(null)
+const currentPageTitle = ref('Образцы документов')
 
-const groupedOptions = [
-  {
-    category: "Документы управления",
-    items: [
-      { name: "Служебная записка", category: "Документы управления" },
-      { name: "Табель", category: "Документы управления" },
-      { name: "Справка о месте работы", category: "Документы управления" },
-      { name: "Заявка на перемещение ТМЦ", category: "Документы управления" }
-    ]
-  },
-  {
-    category: "Заявления",
-    items: [
-      { name: "Отпуск", category: "Заявления" },
-      { name: "Командировка", category: "Заявления" },
-      { name: "Материальная помощь", category: "Заявления" }
-    ]
-  },
-  {
-    category: "Бухгалтерия",
-    items: [
-      { name: "Заявка со склада", category: "Бухгалтерия" },
-      { name: "Накладная на перемещение ОС", category: "Бухгалтерия" },
-      { name: "Акт списания", category: "Бухгалтерия" }
-    ]
-  }
-]
+const iconModules = import.meta.glob('@/components/icons/*.vue', { eager: true })
+
+/**
+ * Типизация для загруженных модулей Vue
+ */
+type IconModule = { default: ReturnType<typeof defineAsyncComponent> | any }
+
+/**
+ * Преобразуем в объект вида { IconName: компонент }
+ */
+const icons: Record<string, any> = {}
+
+for (const path in iconModules) {
+  const module = iconModules[path] as IconModule
+  const name = path.split('/').pop()?.replace('.vue', '') || path
+  icons[name] = module.default
+}
+
 </script>

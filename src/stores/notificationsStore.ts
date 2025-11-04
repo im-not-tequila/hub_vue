@@ -1,15 +1,11 @@
 import { defineStore } from 'pinia'
+import {NotificationResponse} from "@/components/layout/header/notifications/types/notifications";
+import {notifications as getNotifications} from "@/components/layout/header/notifications/api/notifications.api";
 
-interface Notification {
-    id: number
-    message: string
-    createdAt: string
-    read: boolean
-}
 
 interface NotificationsState {
     socket: WebSocket | null
-    notifications: Notification[]
+    notifications: NotificationResponse[]
     isConnected: boolean
 }
 
@@ -21,10 +17,13 @@ export const useNotificationsStore = defineStore('notifications', {
     }),
 
     actions: {
-        connect() {
+        async connect() {
+            const { data } = await getNotifications(false)
+            this.notifications = data ?? []
+
             if (this.socket) return
 
-            const wsUrl = `${import.meta.env.VITE_WS_URL}/notifications`
+            const wsUrl = `${import.meta.env.VITE_WS_URL}`
             this.socket = new WebSocket(wsUrl)
 
             this.socket.onopen = () => {
@@ -32,12 +31,19 @@ export const useNotificationsStore = defineStore('notifications', {
                 console.log('[WS] Connected to notifications')
             }
 
-            this.socket.onmessage = (event) => {
+            this.socket.onmessage = async (event) => {
                 try {
-                    const data: Notification = JSON.parse(event.data)
-                    this.notifications.unshift(data)
+                    const payload = JSON.parse(event.data)
+
+                    if (payload?.new_notification) {
+                        const { data } = await getNotifications(false)
+                        this.notifications = data ?? []
+                    } else {
+                        console.debug('[WS] Skip non-notification payload', payload)
+                    }
+
                 } catch (e) {
-                    console.error('[WS] Failed to parse notifications', e)
+                    console.error('[WS] Failed to handle message', e, event.data)
                 }
             }
 
@@ -63,12 +69,12 @@ export const useNotificationsStore = defineStore('notifications', {
 
         markAsRead(id: number) {
             const notif = this.notifications.find(n => n.id === id)
-            if (notif) notif.read = true
+            if (notif) notif.is_read = true
             // можно ещё дернуть API FastAPI для обновления статуса
         },
     },
 
     getters: {
-        unreadCount: (state) => state.notifications.filter(n => !n.read).length,
+        unreadCount: (state) => state.notifications.filter(n => !n.is_read).length,
     },
 })

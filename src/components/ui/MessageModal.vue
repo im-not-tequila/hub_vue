@@ -1,6 +1,6 @@
 <template>
   <div
-      class="fixed inset-0 flex justify-center items-start z-52 "
+      class="fixed inset-0 flex justify-center items-start z-52"
       :class="{ 'pointer-events-none': !modelValue }"
       aria-hidden="false"
   >
@@ -39,7 +39,7 @@
                   'border-gray-200  dark:border-gray-800 z-51',
                 ]"
       >
-        <div class="flex flex-col justify-center items-center min-w-[20vw] min-h-[12vh] p-3 border-b  border-gray-200 dark:border-gray-800">
+        <div class="flex flex-col justify-center items-center min-w-[20vw] max-w-[30vw] min-h-[12vh] p-3 border-b  border-gray-200 dark:border-gray-800">
           <Alert
               :variant="variant"
               :title="title"

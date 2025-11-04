@@ -23,7 +23,7 @@
           :required="required"
           :aria-invalid="!!error"
           :aria-describedby="[hintId, errorId].filter(Boolean).join(' ') || undefined"
-          @focus="isOpen = true"
+          @focus="focus"
           :class="[
           selectClasses,
             { 'pl-10': $slots.prefix }
@@ -72,11 +72,12 @@
         leave-to-class="transform scale-95 opacity-0"
     >
       <div
-          v-if="isOpen"
+          v-if="isOpen && filteredOptions.length"
+          ref="dropdownRef"
           class=" z-55 w-full mt-1 bg-white rounded-lg shadow-sm border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
       >
         <ul
-            v-if="isOpen && filteredOptions.length"
+
             class="overflow-y-auto divide-y divide-gray-200 custom-scrollbar max-h-60 dark:divide-gray-800"
         >
           <li
@@ -134,6 +135,8 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
+
+const dropdownRef = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
 
 const selectId = `bs-select-${Math.random().toString(36).slice(2, 9)}`
@@ -190,7 +193,14 @@ function clear() {
 }
 
 /** потеря фокуса */
-function onBlurHandler() {
-  setTimeout(() => (isOpen.value = false), 100) // чтобы можно было кликнуть по опции
+function onBlurHandler(e: FocusEvent) {
+  requestAnimationFrame(() => {
+    if (dropdownRef.value && dropdownRef.value.contains(document.activeElement)) return
+    isOpen.value = false
+  })
+}
+
+function focus() {
+  isOpen.value = true
 }
 </script>

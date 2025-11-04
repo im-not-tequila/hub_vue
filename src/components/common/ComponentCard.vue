@@ -58,7 +58,7 @@
       <div
           v-show="!isCollapsible || isOpen"
           :class="[
-            'overflow-hidden',
+            'overflow-y-hidden',
             hasHeaderContent ? 'border-t border-gray-100 dark:border-gray-800' : ''
           ]"
           :id="contentId"

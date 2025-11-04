@@ -24,14 +24,6 @@ export const allDocumentTypesAndCategories = (lang: 'ru' | 'kz' | 'en' = 'ru') =
     })
 
 export const documentUpload = (formData: FormData) => {
-    // const formData = new FormData()
-    // formData.append('document_name', data.document_name)
-    // formData.append('document_type_id', data.document_type_id.toString())
-    // formData.append('recipient_id', data.recipient_id.toString())
-    // formData.append('signature', data.cms)
-    // formData.append('file', data.file)
-    // formData.append('approver_user_ids', JSON.stringify(data.approver_user_ids))
-
     return httpClient.post('/doc/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     })
@@ -82,3 +74,7 @@ export const documentPdf = (document_id: number) => {
         responseType: 'blob',
     })
 }
+
+
+
+

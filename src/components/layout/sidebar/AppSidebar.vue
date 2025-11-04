@@ -245,6 +245,11 @@ const menuGroups = [
         icon: TableIcon,
         name: "Журнал посещений",
         path: "/visit-history",
+      },
+      {
+        icon: PageIcon,
+        name: "Образцы документов",
+        path: "/sample-documents",
       }
     ],
   },

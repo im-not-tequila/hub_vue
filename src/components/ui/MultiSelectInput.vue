@@ -67,17 +67,6 @@
         </div>
       </div>
 
-      <!-- Кнопка очистки -->
-<!--      <span-->
-<!--          v-if="clearable && !disabled && selectedItems.length > 0"-->
-<!--          class="absolute z-30 right-8 top-1/2 text-gray-500 -translate-y-1/2 cursor-pointer dark:text-gray-400 hover:text-gray-600"-->
-<!--          @click.stop="clear"-->
-<!--      >-->
-<!--        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">-->
-<!--          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />-->
-<!--        </svg>-->
-<!--      </span>-->
-
       <!-- Стрелка -->
       <span class="ml-auto absolute z-30 right-3 bottom-3 text-gray-700 dark:text-gray-400 transition-transform duration-150">
         <svg
@@ -117,6 +106,7 @@
       >
         <div class="p-2 border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <BaseInput
+              ref="searchInputRef"
               v-model="search"
               placeholder="Поиск..."
           />
@@ -164,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import { ref, nextTick, computed, onMounted, onBeforeUnmount, type Ref } from 'vue'
 import BaseInput from "@/components/ui/BaseInput.vue";
 
 export type MultiSelectOption = {
@@ -260,12 +250,21 @@ const searchOptions = (query: string) => {
 
 const filteredOptions = computed(() => searchOptions(search.value))
 
+const searchInputRef = ref<InstanceType<typeof HTMLInputElement> | null>(null)
+
 /**
  * Открыть / закрыть дропдаун
  */
 function toggleDropdown() {
   if (props.disabled) return
   isOpen.value = !isOpen.value
+
+  if (isOpen.value) {
+    // дождёмся, когда BaseInput появится в DOM
+    nextTick(() => {
+      searchInputRef.value?.focus()
+    })
+  }
 }
 
 /**

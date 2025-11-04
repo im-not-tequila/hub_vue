@@ -1,10 +1,9 @@
 <template>
-  <div class="min-h-screen xl:flex bg-gray-50 dark:bg-slate-900
-">
+  <div class="min-h-screen xl:flex bg-gray-50 dark:bg-slate-900">
     <app-sidebar v-if="sidebar"/>
     <Backdrop />
     <div
-      class="flex-1 transition-all duration-300 ease-in-out max-w-full overflow-x-hidden"
+      class="flex-1 transition-all duration-300 ease-in-out max-w-full "
       :class="[
           (sidebar && header) ? (isExpanded || isHovered)  ? 'lg:ml-[290px]' : 'lg:ml-[90px]' : ''
           ]"

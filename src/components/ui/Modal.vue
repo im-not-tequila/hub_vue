@@ -1,6 +1,6 @@
 <template>
   <div
-      class="fixed inset-0 flex items-center justify-center  z-52"
+      class="fixed inset-0 flex items-center justify-center z-52"
       :class="{ 'pointer-events-none': !modelValue }"
       aria-hidden="false"
   >

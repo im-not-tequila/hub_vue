@@ -28,18 +28,17 @@ export const useUserStore = defineStore('user', {
 
         setUser(user: User | null) {
             this.user = user
-            // const notificationsStore = useNotificationsStore()
-            // notificationsStore.connect()
+            const notificationsStore = useNotificationsStore()
+            notificationsStore.connect()
         },
 
         clearUser() {
             this.user = null
-            // const notificationsStore = useNotificationsStore()
-            // notificationsStore.disconnect()
+            const notificationsStore = useNotificationsStore()
+            notificationsStore.disconnect()
         },
 
         async logout() {
-
             await userApi.logout()
             this.clearUser()
 

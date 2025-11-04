@@ -27,6 +27,15 @@ const routes = [
             title: 'eCommerce Dashboard',
         }
     },
+    {
+        path: '/sample-documents',
+        name: 'sample_documents',
+        component: () => import('@/modules/sample-documents/views/SampleDocumentsView.vue'),
+        meta: {
+            requiresAuth: true,
+            title: 'eCommerce Dashboard',
+        }
+    },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
     { path: '/test', name: 'test', component: TestView, meta: { requiresAuth: true } },
 ]

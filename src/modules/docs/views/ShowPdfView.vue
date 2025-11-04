@@ -192,6 +192,7 @@ import {DocumentSignRequest} from "@/modules/docs/types/request";
 import {AxiosError} from "axios";
 import MessageModal from "@/components/ui/MessageModal.vue";
 import {useUserStore} from "@/stores/userStore";
+import { useRouter, useRoute } from 'vue-router'
 
 
 const userStore = useUserStore()
@@ -222,6 +223,9 @@ const props = defineProps({
   activeTab: String as PropType<'incoming' | 'outgoing' | 'pendingExecution' | 'executed'>,
 });
 
+
+const router = useRouter()
+const route = useRoute()
 const { modelValue } = toRefs(props);
 
 const emit = defineEmits(['update:modelValue', 'close']);
@@ -303,6 +307,7 @@ const closePdf = () => {
   if (pdfUrl.value) {
     URL.revokeObjectURL(pdfUrl.value); // очищаем память
     pdfUrl.value = null;
+    router.replace({ query: { ...route.query, doc_id: undefined } })
   }
 };
 
