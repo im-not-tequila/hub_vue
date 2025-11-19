@@ -1,15 +1,13 @@
 import httpClient from '@/api/httpClient'
 
 import {
-    DocumentUploadRequest,
     DocumentSignRequest
 } from "@/modules/docs/types/request";
 
 import {
     AllTutorsWithPositionResponse,
     AllDocumentTypesAndCategoryResponse,
-    IncomingResponse,
-    OutgoingResponse
+    DocumentResponse
 } from '../types/response'
 
 
@@ -54,19 +52,19 @@ export const documentUnhide = (document_id: number) => {
 }
 
 export const documentIncoming = () => {
-    return httpClient.get<IncomingResponse[]>('/doc/incoming')
+    return httpClient.get<DocumentResponse[]>('/doc/incoming')
 }
 
 export const documentOutgoings = () => {
-    return httpClient.get<OutgoingResponse[]>('/doc/outgoing')
+    return httpClient.get<DocumentResponse[]>('/doc/outgoing')
 }
 
 export const documentPendingExecution = () => {
-    return httpClient.get<OutgoingResponse[]>('/doc/pending-execution')
+    return httpClient.get<DocumentResponse[]>('/doc/pending-execution')
 }
 
 export const documentExecuted = () => {
-    return httpClient.get<OutgoingResponse[]>('/doc/executed')
+    return httpClient.get<DocumentResponse[]>('/doc/executed')
 }
 
 export const documentPdf = (document_id: number) => {

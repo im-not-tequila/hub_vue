@@ -180,7 +180,7 @@ import {ref, defineProps, defineEmits, watch, toRefs, PropType, onMounted, react
 import Modal from "@/components/ui/Modal.vue";
 import BaseButton from "@/components/ui/BaseButton.vue";
 import {documentCancel, documentExecute, documentPdf, documentSign} from "../api/docs.api";
-import { IncomingResponse, OutgoingResponse } from "@/modules/docs/types/response";
+import { DocumentResponse } from "@/modules/docs/types/response";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import {DocumentStatus, Person} from "@/modules/docs/types/doc";
 import TextArea from "@/components/ui/TextArea.vue";
@@ -217,7 +217,7 @@ onMounted(async () => {
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
   doc: {
-    type: Object as PropType<IncomingResponse | OutgoingResponse | null>,
+    type: Object as PropType<DocumentResponse | null>,
     default: null
   },
   activeTab: String as PropType<'incoming' | 'outgoing' | 'pendingExecution' | 'executed'>,
@@ -310,11 +310,6 @@ const closePdf = () => {
     router.replace({ query: { ...route.query, doc_id: undefined } })
   }
 };
-
-// Эта функция нужна для проброса значения вверх
-function updateValue(newValue: boolean) {
-  emit('update:modelValue', newValue);
-}
 
 function closeModal() {
   closePdf()

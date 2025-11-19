@@ -9,12 +9,12 @@
 
     <div class="flex flex-col justify-center items-center min-h-[90vh] space-y-6">
       <img
-          class="dark:hidden max-w-[420px]"
+          class="dark:hidden max-w-[90px]"
           :src="logoUrlBlue"
           alt="Логотип"
       />
       <img
-          class="hidden dark:block max-w-[420px]"
+          class="hidden dark:block max-w-[90px]"
           :src="logoUrlWhite"
           alt="Logo"
       />

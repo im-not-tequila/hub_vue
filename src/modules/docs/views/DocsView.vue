@@ -208,8 +208,8 @@ import { PlusIcon } from "@/components/icons";
 import CreateDocView from "@/modules/docs/views/CreateDocView.vue";
 import TableView from "@/modules/docs/views/TableView.vue";
 import ShowPdfView from "@/modules/docs/views/ShowPdfView.vue";
-import { IncomingResponse, OutgoingResponse } from "@/modules/docs/types/response";
-import { useRoute, useRouter } from 'vue-router'
+import { DocumentResponse } from "@/modules/docs/types/response";
+import { useRoute } from 'vue-router'
 import {
   documentExecuted, documentHide, documentUnhide,
   documentIncoming,
@@ -223,7 +223,6 @@ import CheckboxInput from "@/components/ui/CheckboxInput.vue";
 
 
 const route = useRoute()
-const router = useRouter()
 const layoutRef = ref<any>(null)
 
 const currentPageTitle = ref('Документы')
@@ -231,10 +230,10 @@ const activeTab = ref<'incoming' | 'outgoing' | 'pendingExecution' | 'executed'>
 const modalIsOpen = ref(false)
 const showDocumentModalIsOpen = ref(false)
 
-const incoming = ref<IncomingResponse[]>([])
-const outgoing = ref<OutgoingResponse[]>([])
-const pendingExecution = ref<OutgoingResponse[]>([])
-const executed = ref<OutgoingResponse[]>([])
+const incoming = ref<DocumentResponse[]>([])
+const outgoing = ref<DocumentResponse[]>([])
+const pendingExecution = ref<DocumentResponse[]>([])
+const executed = ref<DocumentResponse[]>([])
 
 type Filters = {
   signed: boolean,
@@ -250,7 +249,7 @@ const filters = reactive<Filters>({
   hidden: false,
 })
 
-const selectedDoc = ref<IncomingResponse | OutgoingResponse | null>(null)
+const selectedDoc = ref<DocumentResponse | null>(null)
 
 const searchIncoming = (query: string) => {
   if (!query) return incoming.value
@@ -331,11 +330,11 @@ watch(
     async(docId) => {
       if (docId) {
         await refreshData()
-        // получаем документ из таблицы, стора или API
-        // пример:
         const doc = incoming.value.find(doc => doc.id === Number(docId))
-        // const doc = getDocById(Number(docId))
-        viewDocument(doc)
+
+        if (doc) {
+          viewDocument(doc)
+        }
       } else {
         selectedDoc.value = null
       }
@@ -364,12 +363,12 @@ async function refreshData() {
   isLoadingDocs.value = false
 }
 
-function viewDocument(doc: IncomingResponse | OutgoingResponse) {
+function viewDocument(doc: DocumentResponse) {
   selectedDoc.value = doc
   showDocumentModalIsOpen.value = true
 }
 
-async function downloadDocument(doc: IncomingResponse | OutgoingResponse) {
+async function downloadDocument(doc: DocumentResponse) {
   if (!doc?.id) return;
 
   try {

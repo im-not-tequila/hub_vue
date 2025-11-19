@@ -1,15 +1,18 @@
 <template>
   <form class="space-y-6">
-    <DateInput
-        :modelValue="localForm.tripDateStart"
-        label="Начало командировки"
-    />
+    <div class="flex gap-3">
+      <DateInput
+          :modelValue="localForm.tripDateStart"
+          label="Начало командировки"
+          class="w-[50%]"
+      />
 
-    <DateInput
-        :modelValue="localForm.tripDateEnd"
-        label="Конец командировки"
-    />
-
+      <DateInput
+          :modelValue="localForm.tripDateEnd"
+          label="Конец командировки"
+          class="w-[50%]"
+      />
+    </div>
     <SelectInput
         v-model="localForm.fundingSource"
         label="Источник финансирования"

@@ -171,7 +171,6 @@ const form = reactive(getDefaultForm())
 const form107 = reactive(getDefaultForm107())
 const hasErrorDefault = computed(() => Object.values(form.errors).some(Boolean))
 const hasError107 = computed(() => Object.values(form107.errors).some(Boolean))
-const approversSelectedOptions = ref<MultiSelectOption[]>([])
 const selectedDocumentType = ref<DocumentType | null>(null)
 const tutorsWithPositionOptions = ref<MultiSelectOption[]>([])
 const currentStep = ref(1)
@@ -354,7 +353,7 @@ async function signDocument107() {
     let formData = new FormData()
 
     formData.append('document_name', form.documentName)
-    formData.append('document_type_id', selectedDocumentType.value?.id.toString())
+    formData.append('document_type_id', '107')
     formData.append('recipient_id', form.recipientId.toString())
     formData.append('signature', await signDocument(form.file))
     formData.append('file', form.file)
@@ -383,8 +382,6 @@ async function signDocumentClick() {
   }
 
   uiStore.hideLoader()
-  emit('submitted')
-  closeModal()
 }
 
 </script>

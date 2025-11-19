@@ -163,7 +163,7 @@ const emit = defineEmits<{
 
 const docs = toRef(props, 'sampleDocuments')
 const sortKey = ref<SortKey>('name')
-const sortAsc = ref(false)
+const sortAsc = ref(true)
 
 
 const sortedDocs = computed(() => {

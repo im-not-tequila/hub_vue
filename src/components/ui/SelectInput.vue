@@ -16,14 +16,16 @@
     >
       <input
           :id="selectId"
+          ref="triggerRef"
           type="text"
           v-model="searchQuery"
           :placeholder="placeholder || 'Search...'"
           :disabled="disabled"
+          :readonly="!props.is_search"
           :required="required"
           :aria-invalid="!!error"
           :aria-describedby="[hintId, errorId].filter(Boolean).join(' ') || undefined"
-          @focus="focus"
+          @focus="openDropdown"
           :class="[
           selectClasses,
             { 'pl-10': $slots.prefix }
@@ -63,34 +65,35 @@
     </div>
 
     <!-- Выпадающий список -->
-    <transition
-        enter-active-class="transition duration-100 ease-out"
-        enter-from-class="transform scale-95 opacity-0"
-        enter-to-class="transform scale-100 opacity-100"
-        leave-active-class="transition duration-75 ease-in"
-        leave-from-class="transform scale-100 opacity-100"
-        leave-to-class="transform scale-95 opacity-0"
-    >
-      <div
-          v-if="isOpen && filteredOptions.length"
-          ref="dropdownRef"
-          class=" z-55 w-full mt-1 bg-white rounded-lg shadow-sm border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+    <teleport to="#dropdown-target">
+      <transition
+          enter-active-class="transition duration-100 ease-out"
+          enter-from-class="transform scale-95 opacity-0"
+          enter-to-class="transform scale-100 opacity-100"
+          leave-active-class="transition duration-75 ease-in"
+          leave-from-class="transform scale-100 opacity-100"
+          leave-to-class="transform scale-95 opacity-0"
       >
-        <ul
-
-            class="overflow-y-auto divide-y divide-gray-200 custom-scrollbar max-h-60 dark:divide-gray-800"
+        <div
+            v-if="isOpen && filteredOptions.length"
+            ref="dropdownRef"
+            class="absolute z-[9999] mt-1 bg-white rounded-lg shadow-sm border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+            :style="dropdownStyles"
         >
-          <li
-              v-for="opt in filteredOptions"
-              :key="opt.value"
-              class="relative flex items-center w-full px-3 py-2 cursor-pointer first:rounded-t-lg last:rounded-b-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-              @mousedown.prevent="selectOption(opt)"
-          >
-            {{ opt.label }}
-          </li>
-        </ul>
-      </div>
-    </transition>
+          <ul class="overflow-y-auto divide-y divide-gray-200 custom-scrollbar max-h-60 dark:divide-gray-800">
+            <li
+                v-for="opt in filteredOptions"
+                :key="opt.value"
+                class="relative flex items-center w-full px-3 py-2 cursor-pointer first:rounded-t-lg last:rounded-b-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                @mousedown.prevent="selectOption(opt)"
+            >
+              {{ opt.label }}
+            </li>
+          </ul>
+        </div>
+      </transition>
+    </teleport>
+
 
     <!-- Hint & Error -->
     <p v-if="hint && !error" class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ hint }}</p>
@@ -99,9 +102,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, nextTick, watch } from 'vue'
 
-type SelectOption = {
+export type SelectOption = {
   value: string | number
   label: string
 }
@@ -118,6 +121,7 @@ interface SelectProps {
   hint?: string
   clearable?: boolean
   block?: boolean
+  is_search?: boolean
 }
 
 const props = withDefaults(defineProps<SelectProps>(), {
@@ -128,10 +132,12 @@ const props = withDefaults(defineProps<SelectProps>(), {
   is_error: false,
   clearable: false,
   block: false,
+  is_search: true,
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number | null): void
+  (e: 'change', value: string | number | null): void
 }>()
 
 const searchQuery = ref('')
@@ -144,11 +150,13 @@ const hintId = computed(() => (props.hint ? `${selectId}-hint` : undefined))
 const errorId = computed(() => (props.error ? `${selectId}-error` : undefined))
 
 /** фильтрация по поиску */
-const filteredOptions = computed(() =>
-    props.options.filter((opt) =>
-        opt.label.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-)
+const filteredOptions = computed(() => {
+  if (!props.is_search) return props.options
+  return props.options.filter(opt =>
+      opt.label.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
+
 
 const wrapperClasses = computed(() => {
   return [
@@ -179,11 +187,42 @@ const selectClasses = computed(() => {
       .join(' ')
 })
 
+const triggerRef = ref(null);
+const dropdownStyles = ref({});
+
+const openDropdown = () => {
+  isOpen.value = true;
+  nextTick(() => {
+    const rect = triggerRef.value.getBoundingClientRect();
+    dropdownStyles.value = {
+      position: 'absolute',
+      top: `${rect.bottom + window.scrollY}px`,
+      left: `${rect.left + window.scrollX}px`,
+      width: `${rect.width}px`,
+    };
+  });
+};
+
+watch(
+    () => props.modelValue,
+    (val) => {
+      const opt = props.options.find(o => o.value === val)
+      searchQuery.value = opt ? opt.label : ''
+    },
+    { immediate: true }
+)
+
 /** выбор */
 function selectOption(opt: SelectOption) {
   emit('update:modelValue', opt.value)
+  emit('change', opt.value)
   searchQuery.value = opt.label
   isOpen.value = false
+
+  // 👉 Убираем фокус с инпута
+  nextTick(() => {
+    triggerRef.value?.blur()
+  })
 }
 
 /** очистка */
@@ -200,7 +239,4 @@ function onBlurHandler(e: FocusEvent) {
   })
 }
 
-function focus() {
-  isOpen.value = true
-}
 </script>

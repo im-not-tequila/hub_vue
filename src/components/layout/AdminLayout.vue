@@ -9,7 +9,10 @@
           ]"
     >
       <app-header v-if="header" v-model:search="search" />
-      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div :class="[
+          ' p-4 mx-auto  md:p-6',
+          (isExpanded || isHovered) ? 'lg:max-w-[calc(100vw-290px)]' : 'lg:max-w-[calc(100vw-90px)]'
+          ]">
         <slot :search="search"></slot>
       </div>
     </div>

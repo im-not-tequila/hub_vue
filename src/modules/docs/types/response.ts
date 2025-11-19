@@ -14,7 +14,7 @@ export interface AllDocumentTypesAndCategoryResponse {
 
 export type AllTutorsWithPositionResponse = TutorWithPosition[]
 
-export interface IncomingResponse {
+export interface DocumentResponse {
     id: number
     name: string
     sender: Person
@@ -27,16 +27,4 @@ export interface IncomingResponse {
     is_hidden: boolean
 }
 
-export interface OutgoingResponse {
-    id: number
-    name: string
-    sender: Person
-    recipient: Person
-    approvers: [Person]
-    type: string
-    type_id: number
-    create_datetime: string
-    status: DocumentStatus
-    is_hidden: boolean
-}
 

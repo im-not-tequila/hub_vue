@@ -28,16 +28,15 @@
 
             <!--        Заголовки столбцов-->
 
-
-            <thead class="sticky top-0 z-10 bg-white dark:bg-gray-800"> <!-- Добавьте фон для заголовка -->
+            <thead class="sticky top-0 z-10 bg-white dark:bg-gray-800">
               <tr class="border-b border-gray-200 dark:border-gray-700">
               <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
                 <button class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                         @click="setSort('id')" type="button">
                   №
                   <span v-if="sortKey==='id'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
+                    <SmallChevronUpIcon v-if="sortAsc"/>
+                    <SmallChevronDownIcon v-else/>
                     </span>
                 </button>
               </th>
@@ -46,8 +45,8 @@
                         @click="setSort('name')" type="button">
                   Документ
                   <span v-if="sortKey==='name'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
+                      <SmallChevronUpIcon v-if="sortAsc"/>
+                      <SmallChevronDownIcon v-else/>
                     </span>
                 </button>
               </th>
@@ -56,8 +55,8 @@
                         @click="setSort('sender')" type="button">
                   Отправитель
                   <span v-if="sortKey==='sender'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
+                      <SmallChevronUpIcon v-if="sortAsc"/>
+                      <SmallChevronDownIcon v-else/>
                     </span>
                 </button>
               </th>
@@ -66,8 +65,8 @@
                         @click="setSort('recipient')" type="button">
                   Получатель
                   <span v-if="sortKey==='recipient'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
+                      <SmallChevronUpIcon v-if="sortAsc"/>
+                      <SmallChevronDownIcon v-else/>
                     </span>
                 </button>
               </th>
@@ -76,8 +75,8 @@
                         @click="setSort('approvers')" type="button">
                   Согласование
                   <span v-if="sortKey==='approvers'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
+                      <SmallChevronUpIcon v-if="sortAsc"/>
+                      <SmallChevronDownIcon v-else/>
                     </span>
                 </button>
               </th>
@@ -86,8 +85,8 @@
                         @click="setSort('create_datetime')" type="button">
                   Дата создания
                   <span v-if="sortKey==='create_datetime'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
+                      <SmallChevronUpIcon v-if="sortAsc"/>
+                      <SmallChevronDownIcon v-else/>
                     </span>
                 </button>
               </th>
@@ -96,9 +95,9 @@
                         @click="setSort('status')" type="button">
                   Статус
                   <span v-if="sortKey==='status'">
-                      <svg v-if="sortAsc" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 12l5-5 5 5"/></svg>
-                      <svg v-else class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5"/></svg>
-                    </span>
+                    <SmallChevronUpIcon v-if="sortAsc"/>
+                    <SmallChevronDownIcon v-else/>
+                  </span>
                 </button>
               </th>
               <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
@@ -222,11 +221,7 @@
                         aria-label="Просмотреть"
                     >
 
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-                           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
+                      <EyeIcon/>
 
                       <span
                           v-if="currenUserIsIncomingByDoc(doc) && colorByStatus(doc) === 'yellow'"
@@ -247,11 +242,7 @@
                         title="Скачать"
                         aria-label="Скачать"
                     >
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <path d="M7 10l5 5 5-5"/>
-                        <path d="M12 15V3"/>
-                      </svg>
+                      <DownloadIcon/>
                     </button>
 
                     <button
@@ -263,18 +254,7 @@
                         :title="!doc.is_hidden ? 'Скрыть': 'Не скрывать'"
                         :aria-label="!doc.is_hidden ? 'Скрыть': 'Не скрывать'"
                     >
-                      <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke-width="1.5"
-                          stroke="currentColor"
-                          class="w-5 h-5"
-                      >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-                      </svg>
-
-
+                      <EyeCloseIcon/>
                     </button>
 
                     <button
@@ -287,13 +267,7 @@
                         title="Удалить"
                         aria-label="Удалить"
                     >
-                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6"/>
-                        <path d="M14 11v6"/>
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                      </svg>
+                      <TrashIcon/>
                     </button>
 
                   </div>
@@ -312,18 +286,23 @@
 </template>
 
 <script setup lang="ts">
-import {defineProps, defineEmits, toRef, ref, computed, reactive, onMounted, onUnmounted} from 'vue'
+import {defineProps, defineEmits, toRef, ref, computed } from 'vue'
 import {DocumentStatus, Person} from "@/modules/docs/types/doc";
-import { IncomingResponse } from "@/modules/docs/types/response";
+import { DocumentResponse } from "@/modules/docs/types/response";
 import {useUserStore} from "@/stores/userStore";
 import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
-import { useAvatars } from '@/composables/useAvatars'
+import EyeIcon from '@/components/icons/EyeIcon.vue';
+import DownloadIcon from '@/components/icons/DownloadIcon.vue';
+import EyeCloseIcon from "@/components/icons/EyeCloseIcon.vue";
+import TrashIcon from "@/components/icons/TrashIcon.vue";
+import SmallChevronUpIcon from "@/components/icons/SmallChevronUpIcon.vue";
+import SmallChevronDownIcon from "@/components/icons/SmallChevronDownIcon.vue";
 
 
 type SortKey = 'id' | 'name' | 'sender' | 'recipient' | 'approvers' | 'create_datetime' | 'status'
 
 const props = defineProps<{
-  docs: IncomingResponse[]
+  docs: DocumentResponse[]
   showHidden?: boolean
   showPending?: boolean
   showRejected?: boolean
@@ -331,8 +310,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'view', doc: IncomingResponse): void
-  (e: 'download', doc: IncomingResponse): void
+  (e: 'view', doc: DocumentResponse): void
+  (e: 'download', doc: DocumentResponse): void
   (e: 'revoke', id: number): void
   (e: 'hide', id: number): void
   (e: 'unhide', id: number): void
@@ -343,11 +322,6 @@ const userStore = useUserStore()
 const docs = toRef(props, 'docs')
 const sortKey = ref<SortKey>('create_datetime')
 const sortAsc = ref(false)
-
-const avatarUrl = () => new URL(noUserpicUrl, import.meta.url).href
-const { getAvatarSrc } = useAvatars()
-const avatars = reactive<Record<number, string>>({})
-const blobUrls: string[] = []
 
 const sortedDocs = computed(() => {
   let arr = [...docs.value]
@@ -374,7 +348,7 @@ const sortedDocs = computed(() => {
 })
 
 const colorByStatus = ((
-    doc: IncomingResponse | undefined = undefined,
+    doc: DocumentResponse | undefined = undefined,
     status: DocumentStatus | undefined = undefined
 ) => {
   if (doc) {
@@ -398,7 +372,7 @@ const colorByStatus = ((
   return ''
 })
 
-function currenUserIsIncomingByDoc(doc: IncomingResponse): Person | undefined {
+function currenUserIsIncomingByDoc(doc: DocumentResponse): Person | undefined {
   if (userStore.user?.id === doc.recipient.id) return doc.recipient
 
   const user: Person | undefined = doc?.approvers?.find(
@@ -414,7 +388,7 @@ function isOutgoing() {
   return userStore.user?.id === props.docs[0].sender.id
 }
 
-function computeDocStatus(doc: IncomingResponse): string {
+function computeDocStatus(doc: DocumentResponse): string {
   const user = currenUserIsIncomingByDoc(doc)
 
   if (user) {
@@ -484,7 +458,7 @@ function setSort(key: SortKey) {
   }
 }
 
-function compare(a: IncomingResponse, b: IncomingResponse): number {
+function compare(a: DocumentResponse, b: DocumentResponse): number {
   let res = 0
   switch (sortKey.value) {
     case 'id':
@@ -506,8 +480,9 @@ function compare(a: IncomingResponse, b: IncomingResponse): number {
   return sortAsc.value ? res : -res
 }
 
-function onAvatarError(event) {
-  event.target.src = noUserpicUrl
+function onAvatarError(event: Event) {
+  const target = event.target as HTMLImageElement
+  target.src = noUserpicUrl
 }
 
 </script>

@@ -30,6 +30,15 @@
     </button>
 
     <!-- Dropdown Start -->
+    <transition
+        appear
+        enter-active-class="transition duration-400 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+    >
     <div
       v-if="dropdownOpen"
       class="absolute -right-[240px] mt-[17px] flex min-h-[20vh] max-h-[50vh] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
@@ -144,6 +153,7 @@
         Скрыть все уведомления
       </router-link>
     </div>
+    </transition>
     <!-- Dropdown End -->
   </div>
 </template>

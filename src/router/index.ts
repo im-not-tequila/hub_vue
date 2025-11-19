@@ -21,7 +21,7 @@ const routes = [
     {
         path: '/visit-history',
         name: 'visit_history',
-        component: () => import('@/modules/visit-history/views/VisitHistoryVue.vue'),
+        component: () => import('@/modules/visit-history/views/VisitHistoryView.vue'),
         meta: {
             requiresAuth: true,
             title: 'eCommerce Dashboard',
@@ -34,6 +34,15 @@ const routes = [
         meta: {
             requiresAuth: true,
             title: 'eCommerce Dashboard',
+        }
+    },
+    {
+        path: '/work-tabel',
+        name: 'work_tabel',
+        component: () => import('@/modules/work-tabel/views/WorkTabelView.vue'),
+        meta: {
+            requiresAuth: true,
+            title: 'Work Tabel',
         }
     },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
