@@ -65,8 +65,9 @@
       >
         <div
             :class="[
-            'p-4 sm:p-6 space-y-5',
-            bodyClassName,
+                bodyClassName,
+              'p-4 sm:p-6 space-y-5',
+
           ]"
         >
           <slot></slot>

@@ -67,7 +67,10 @@
             />
           </svg>
         </button>
-        <SearchBar v-model="internalSearch" />
+        <div class="min-w-[24vw]">
+          <SearchBar v-model="internalSearch" />
+        </div>
+
       </div>
 
       <div

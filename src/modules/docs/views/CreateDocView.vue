@@ -3,11 +3,105 @@
       :modelValue="props.modelValue"
       :title="modalTitle"
       :desc="modalDescription"
-      class-name="w-[80vw] h-[90vh]"
+      class-name="w-[50vw] h-[90vh]"
   >
-    <template #body>
+    <template v-if="currentStep === 1" #header-end>
+      <div class="flex items-center mt-3 w-full">
+        <SearchBar v-model="searchQuery"/>
+      </div>
+    </template>
 
+    <template #body>
       <div v-if="currentStep === 1" class="w-full">
+
+        <div
+            class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+        >
+          <div class="max-w-full  custom-scrollbar">
+            <div class="overflow-x-auto"> <!-- Добавляем overflow-x-auto для горизонтального скролла, если таблица будет шире -->
+              <div class="h-[calc(100vh-390px)]  overflow-y-auto"> <!-- Обертка для вертикального скролла -->
+                <table class="min-w-full table-fixed border-collapse">
+                  <colgroup>
+
+                    <col class="w-1/12" />
+                    <col class="w-6/12" />
+                  </colgroup>
+
+                  <thead class="sticky top-0 z-10 bg-white dark:bg-gray-800">
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                      <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
+                        <button class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                type="button">
+                          Категория
+                          <span>
+                            <SmallChevronUpIcon v-if="true"/>
+                            <SmallChevronDownIcon v-else/>
+                          </span>
+                        </button>
+                      </th>
+
+                      <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
+                        <button class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                type="button">
+                          №
+                          <span>
+                            <SmallChevronUpIcon v-if="true"/>
+                            <SmallChevronDownIcon v-else/>
+                          </span>
+                        </button>
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody
+                      v-for="item in filteredDocumentTypes" :key="item.category.id"
+                      class="divide-y divide-gray-200 dark:divide-gray-700"
+                  >
+                    <tr
+                        v-for="(docType, index) in item.document_types"
+                        :key="docType.id"
+                        :class="[
+                        'w-full border-t border-gray-100 dark:border-gray-800',
+
+                        ]"
+                    >
+                      <td
+                          v-if="index === 0"
+                          :rowspan="item.document_types.length"
+                          style="vertical-align: top; font-weight: bold;"
+                          class="px-2 py-2 align-middle sm:px-2 sm:py-4"
+                      >
+                        <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90 max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem]">
+                          {{ item.category.name }}
+                        </p>
+                      </td>
+
+                      <td class="px-4 py-1 align-middle sm:px-4 ">
+                        <button
+                            type="button"
+                            class="w-full text-left rounded-md px-3 text-sm transition"
+                            :class="[
+                          selectedDocumentType?.id === docType.id
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5'
+                        ]"
+                                @click="selectDocumentTypeClick(docType)"
+                            >
+                          <span class="text-success-400">№{{ docType.id }}:</span> {{ docType.name }}
+                        </button>
+
+
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="currentStep === 11" class="w-full">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">
           <ComponentCard
               v-for="cat in documentTypesAndCategories"
@@ -136,7 +230,10 @@ import {
   CreateDocForm107 as CreateDocForm107Type,
 } from "@/modules/docs/types/form";
 import axios from 'axios'
-
+import SmallChevronUpIcon from "@/components/icons/SmallChevronUpIcon.vue";
+import SmallChevronDownIcon from "@/components/icons/SmallChevronDownIcon.vue";
+import BaseInput from "@/components/ui/BaseInput.vue";
+import SearchBar from "@/components/layout/header/SearchBar.vue";
 
 type InfoMessage = {
   isOpen: boolean,
@@ -210,6 +307,43 @@ const modalDescription = computed(() => {
   if (currentStep.value === 2) {
     return "Заполните данные"
   }
+})
+const searchQuery = ref('')
+
+const searchDocumentTypesAndCategories = (query: string) => {
+  // 1. Если запрос пустой, возвращаем оригинальный массив
+  if (!query) return documentTypesAndCategories.value
+
+  const q = query.toLowerCase().trim()
+
+  return documentTypesAndCategories.value
+      .map(group => {
+        // Проверяем, совпадает ли название самой КАТЕГОРИИ с запросом
+        const isCategoryMatch = group.category.name.toLowerCase().includes(q)
+
+        // Фильтруем типы документов внутри этой категории
+        const filteredTypes = group.document_types.filter(docType => {
+          const finalName = docType.name.toLowerCase() + ' ' + docType.id.toString()
+          const isDocMatch = finalName.includes(q)
+
+          // Логика поиска:
+          // Если совпало имя категории (isCategoryMatch) -> оставляем все документы (вернет true)
+          // ИЛИ если совпало имя конкретного документа (isDocMatch) -> оставляем его
+          return isCategoryMatch || isDocMatch
+        })
+
+        // Возвращаем копию объекта категории с новым списком документов
+        return {
+          ...group,
+          document_types: filteredTypes
+        }
+      })
+      // 2. Убираем категории, в которых не осталось ни одного документа
+      .filter(group => group.document_types.length > 0)
+}
+
+const filteredDocumentTypes = computed(() => {
+  return searchDocumentTypesAndCategories(searchQuery.value)
 })
 
 onMounted(async () => {

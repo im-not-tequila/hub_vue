@@ -43,7 +43,7 @@
               :disabled="true"
               :model-value="userStore.user?.structural_subdivision"
           />
-        
+
           <BaseInput
               label="Должность"
               :disabled="true"
