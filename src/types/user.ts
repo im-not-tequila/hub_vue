@@ -5,5 +5,6 @@ export interface User {
     patronymic: string | null
     shortname: string
     structural_subdivision: string
+    post: string | null
 }
 

@@ -3,7 +3,8 @@ export interface TutorWithPosition {
     lastname: string | null
     firstname: string | null
     patronymic: string | null
-    position_name: string | null
+    structural_subdivision_name: string | null
+    tutor_position_name: string | null
 }
 
 export type DocumentType = {

@@ -92,7 +92,7 @@ const router = useRouter()
 
 
 const menuItems = [
-  { href: '/docs', icon: UserCircleIcon, text: 'Профиль' },
+  { href: '/profile', icon: UserCircleIcon, text: 'Профиль' },
   { href: '/docs', icon: SettingsIcon, text: 'Настройки' },
   { href: '/docs', icon: InfoCircleIcon, text: 'Помощь' },
 ]

@@ -8,7 +8,7 @@ export const loadTutorsWithPositionOptions = async () => {
         return data
             .map((tutor: TutorWithPosition) => ({
                 value: tutor.tutor_id,
-                label: `${tutor.position_name ?? ''} - ${tutor.lastname ?? ''} ${tutor.firstname ?? ''} ${tutor.patronymic ?? ''}`.trim(),
+                label: `${tutor.structural_subdivision_name ?? ''} - ${tutor.lastname ?? ''} ${tutor.firstname ?? ''} ${tutor.patronymic ?? ''}`.trim(),
             }))
             .sort((a, b) => a.label.localeCompare(b.label)) // сортировка по алфавиту
     } catch (error) {
