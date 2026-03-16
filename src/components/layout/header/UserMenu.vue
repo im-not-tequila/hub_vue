@@ -32,7 +32,7 @@
           {{ user.lastname }} {{ user.firstname }} {{ user.patronymic }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          {{ user.structural_subdivision }}
+          {{ user.structural_subdivision.name_ru }}
         </span>
       </div>
 

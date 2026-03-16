@@ -1,5 +1,5 @@
 import httpClient from '@/api/httpClient'
-import type { User } from "@/types/user";
+import type { User, Vice } from "@/types/user";
 
 
 export const getProfile = () =>
@@ -8,3 +8,9 @@ export const getProfile = () =>
 
 export const logout = () =>
     httpClient.post('/auth/logout')
+
+
+export const vices = (structural_subdivision_id: number) =>
+    httpClient.get<Vice[]>('/user/vices', {
+        params: { structural_subdivision_id }
+    })

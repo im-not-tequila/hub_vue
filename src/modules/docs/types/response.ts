@@ -27,4 +27,10 @@ export interface DocumentResponse {
     is_hidden: boolean
 }
 
+export interface AutoCreatePDFResponse {
+    recipient_id: number
+    approver_ids: [number]
+    document_temp_id: string
+}
+
 

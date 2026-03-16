@@ -3,7 +3,7 @@ import { useUserStore } from '@/stores/userStore'
 // import { useUserStore } from '@/stores/userStore'
 
 
-const HomeView = () => import('@/views/HomeView.vue')
+const HomeView = () => import('@/modules/home/views/HomeView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
 const TestView = () => import('@/views/TestView.vue')
 const UserProfileView = () => import('@/modules/user-profile/views/UserProfileView.vue')
@@ -44,6 +44,15 @@ const routes = [
         meta: {
             requiresAuth: true,
             title: 'Work Tabel',
+        }
+    },
+    {
+        path: '/chat',
+        name: 'chat',
+        component: () => import('@/modules/chat/views/ChatView.vue'),
+        meta: {
+            requiresAuth: true,
+            title: 'Чат',
         }
     },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },

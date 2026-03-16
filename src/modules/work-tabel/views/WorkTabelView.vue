@@ -6,11 +6,21 @@
         <div class="flex items-center justify-between gap-3">
 
           <div class="inline-flex gap-3">
+            <div class="w-[28vw]">
+              <SelectInput
+                  :options="subdivisionOptions"
+                  v-model="subdivisionId"
+                  @change="onFilterChange"
+                  placeholder="Подразделение"
+                  :is_search="true"
+              />
+            </div>
+
             <div class="w-[6vw]">
               <SelectInput
                   :options="yearOptions"
                   v-model="year"
-                  @change="changeYear"
+                  @change="onFilterChange"
                   placeholder="Год"
                   :is_search="false"
               />
@@ -20,7 +30,7 @@
              <SelectInput
                  :options="monthOptions"
                  v-model="month"
-                 @change="changeYear"
+                 @change="onFilterChange"
                  placeholder="Месяц"
                  :is_search="false"
              />
@@ -75,23 +85,29 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import {onMounted, ref} from "vue";
-import {workTabel, workTabelExcel} from "@/modules/work-tabel/api/workTabel.api";
+import {workTabel, workTabelExcel, getSubordinates} from "@/modules/work-tabel/api/workTabel.api";
 import type {Tabel} from "@/modules/work-tabel/types/tabel";
 import BaseButton from "@/components/ui/BaseButton.vue";
 import {ChevronRightIcon, PlusIcon, DownloadIcon} from "@/components/icons";
 import SelectInput, {SelectOption} from "@/components/ui/SelectInput.vue";
+import {useUserStore} from "@/stores/userStore";
 
 import Loader from "@/components/layout/Loader.vue";
 import {AxiosError} from "axios";
 
+const userStore = useUserStore()
 
 const isLoading = ref(false)
 const currentPageTitle = ref('Рабочий табель')
 const tabels = ref<Tabel[]>([])
 
+const subdivisionId = ref<number | null>(null)
+const subdivisionOptions = ref<SelectOption[]>([])
+
 const yearOptions: SelectOption[] = [
   { value: 2024, label: '2024' },
   { value: 2025, label: '2025' },
+  { value: 2026, label: '2026' },
 ]
 
 const monthOptions: SelectOption[] = [
@@ -116,19 +132,34 @@ const month = ref(now.getMonth() + 1)
 
 
 onMounted(async() => {
-  await loadTabels()
+  await loadSubdivisions()
 })
 
-async function changeYear() {
+async function loadSubdivisions() {
+  const userSubdivisionId = userStore.user?.subdivision_id
+  if (!userSubdivisionId) return
+
+  try {
+    const { data } = await getSubordinates(userSubdivisionId)
+    subdivisionOptions.value = data.map(s => ({ value: s.id, label: s.name }))
+    subdivisionId.value = userSubdivisionId
+    await loadTabels()
+  } catch (error) {
+    console.error('Ошибка загрузки подразделений:', error)
+  }
+}
+
+async function onFilterChange() {
   await loadTabels()
 }
 
 async function loadTabels() {
-  console.log(year.value, month.value)
+  if (!subdivisionId.value) return
+
   isLoading.value = true
 
   try {
-    let data = await workTabel(year.value, Number(month.value))
+    let data = await workTabel(subdivisionId.value, year.value, Number(month.value))
     tabels.value = data.data
   }
   catch (error) {
@@ -142,8 +173,10 @@ async function loadTabels() {
 }
 
 async function exportToExcel() {
+  if (!subdivisionId.value) return
+
   try {
-    await workTabelExcel(year.value, Number(month.value))
+    await workTabelExcel(subdivisionId.value, year.value, Number(month.value))
   }
   catch (error) {
     if (error instanceof AxiosError) {

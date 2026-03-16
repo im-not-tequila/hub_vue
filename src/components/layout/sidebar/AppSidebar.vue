@@ -255,6 +255,11 @@ const menuGroups = [
         icon: TableIcon,
         name: "Рабочий табель",
         path: "/work-tabel",
+      },
+      {
+        icon: ChatIcon,
+        name: "Чат",
+        path: "/chat",
       }
     ],
   },

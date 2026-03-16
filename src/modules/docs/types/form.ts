@@ -21,11 +21,18 @@ export type CreateDocForm107Errors = {
     tripPurpose: boolean
 }
 
+export interface Destination {
+    full_address: string;
+    organization: string;
+    date_start: string;
+    date_end: string;
+}
+
 export type CreateDocForm107 = {
     tripDateStart: string
     tripDateEnd: string
     fundingSource: number
     tripPurpose: string
-    file: File
-    errors: CreateDocForm107Errors
+    vice?: string;
+    destinations: Destination[];
 }

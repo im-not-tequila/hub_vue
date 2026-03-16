@@ -41,6 +41,11 @@ export interface OutgoingPerson {
     status: DocumentStatus
 }
 
+export interface TravelFundingSource {
+    id: number
+    name: string
+}
+
 
 
 

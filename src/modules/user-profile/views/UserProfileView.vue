@@ -41,7 +41,7 @@
           <BaseInput
               label="Структурное подразделение"
               :disabled="true"
-              :model-value="userStore.user?.structural_subdivision"
+              :model-value="userStore.user?.structural_subdivision.name_ru"
           />
 
           <BaseInput
@@ -57,7 +57,7 @@
     <ComponentCard :collapsible="false" class="mt-4">
       <p class="text-base font-medium text-gray-800 dark:text-white/90">
         Данные взяты из системы Platonus и из Вашего ЭЦП. Если Вы есть в системе Platonus,
-        <a class="cursor-pointer text-blue-500" href="https://platonus.shakarim.kz/">нажмите сюда для редактирования профиля.</a>
+        <a class="cursor-pointer text-blue-500" href="https://platonus.shakarim.kz/" target="_blank">нажмите сюда для редактирования профиля.</a>
       </p>
     </ComponentCard>
   </admin-layout>

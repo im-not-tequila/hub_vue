@@ -134,6 +134,7 @@ const calendarOptions = reactive({
   select: handleDateSelect,
   eventClick: handleEventClick,
   eventContent: renderEventContent,
+  datesSet: handleDatesSet
   // customButtons: {
   //   addEventButton: {
   //     text: 'Add Event +',
@@ -153,20 +154,32 @@ const getVisibleRange = () => {
   return { start, end }
 }
 
-async function loadWorkingHours() {
-  const range = getVisibleRange()
-  if (!range) return  // защита от undefined
+function handleDatesSet(dateInfo) {
+  loadWorkingHours(dateInfo.start, dateInfo.end)
+}
 
-  const date_start = range.start.toISOString().split('T')[0]
-  const date_finish = range.end.toISOString().split('T')[0]
 
-  const response = await visitHistoryWorkingHours(date_start, date_finish)
+async function loadWorkingHours(startDate: Date, endDate: Date) {
+  const formatDate = (date: Date) => {
+    const offset = date.getTimezoneOffset()
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+    return localDate.toISOString().split('T')[0]
+  }
 
-  workingHours.value = response.data.map(item => ({
-    id: item.id.toString(),
-    title: item.working_hours.toString() + ' ч.',
-    start: item.date,
-    extendedProps: { calendar: 'Primary' },
-  }))
+  const date_start = formatDate(startDate)
+  const date_finish = formatDate(endDate)
+
+  try {
+    const response = await visitHistoryWorkingHours(date_start, date_finish)
+
+    workingHours.value = response.data.map(item => ({
+      id: item.id.toString(),
+      title: item.working_hours.toString() + ' ч.',
+      start: item.date,
+      extendedProps: { calendar: 'Primary' },
+    }))
+  } catch (e) {
+    console.error('Ошибка загрузки данных календаря:', e)
+  }
 }
 </script>

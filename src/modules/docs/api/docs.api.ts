@@ -1,4 +1,6 @@
 import httpClient from '@/api/httpClient'
+import {TravelFundingSource} from "@/modules/docs/types/doc";
+import {CreateDocForm107} from "@/modules/docs/types/form";
 
 import {
     DocumentSignRequest
@@ -7,7 +9,7 @@ import {
 import {
     AllTutorsWithPositionResponse,
     AllDocumentTypesAndCategoryResponse,
-    DocumentResponse
+    DocumentResponse, AutoCreatePDFResponse
 } from '../types/response'
 
 
@@ -73,6 +75,27 @@ export const documentPdf = (document_id: number) => {
     })
 }
 
+export const tempDocumentPdf = (document_temp_id: string) => {
+    return httpClient.get(`/doc/temp/${document_temp_id}/pdf`, {
+        responseType: 'blob',
+    })
+}
+
+export const travelFundingSources = (language: string) => {
+    return httpClient.get<TravelFundingSource[]>('/doc/travel-funding-sources', {
+        params: { language },
+    })
+}
+
+export const documentAutoCreatePDF = (document_type_id: number, language: string, data: CreateDocForm107) => {
+    return httpClient.post<AutoCreatePDFResponse>(
+        `/doc/auto/create-pdf/${document_type_id}`,
+        { data: data },
+        {
+            params: { language },
+        }
+    )
+}
 
 
 

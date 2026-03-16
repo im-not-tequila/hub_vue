@@ -14,9 +14,6 @@ import { useUiStore } from '@/stores/uiStore'
 import {useUserStore} from "@/stores/userStore";
 
 
-
-
-
 const app = createApp(App)
 
 app.use(createPinia())
