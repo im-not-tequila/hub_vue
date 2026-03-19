@@ -40,12 +40,14 @@
                   class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   @mousedown.prevent="onPickChatUser(item)"
               >
-                <div class="relative shrink-0">
-                  <div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-semibold text-xs">
-                    {{ getInitials(item.user) }}
-                  </div>
-                  <span v-if="item.user.is_online" class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
-                </div>
+                <ChatAvatar
+                    :user-id="item.user.id"
+                    :firstname="item.user.firstname"
+                    :lastname="item.user.lastname"
+                    :online="item.user.is_online"
+                    size="sm"
+                    border-color="border-white dark:border-gray-800"
+                />
                 <div class="flex-1 min-w-0 text-left">
                   <span class="text-sm font-medium text-gray-900 dark:text-white/90 truncate block">
                     {{ item.user.lastname }} {{ item.user.firstname }}
@@ -71,12 +73,15 @@
                   class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   @mousedown.prevent="onPickNewUser(item.user)"
               >
-                <div class="relative shrink-0">
-                  <div class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-semibold text-xs">
-                    {{ getInitials(item.user) }}
-                  </div>
-                  <span v-if="item.user.is_online" class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
-                </div>
+                <ChatAvatar
+                    :user-id="item.user.id"
+                    :firstname="item.user.firstname"
+                    :lastname="item.user.lastname"
+                    :online="item.user.is_online"
+                    size="sm"
+                    variant="neutral"
+                    border-color="border-white dark:border-gray-800"
+                />
                 <div class="flex-1 min-w-0 text-left">
                   <span class="text-sm font-medium text-gray-900 dark:text-white/90 truncate block">
                     {{ item.user.lastname }} {{ item.user.firstname }}
@@ -111,12 +116,13 @@
             class="flex flex-col items-center gap-1 min-w-[56px] group"
             @click="$emit('selectUser', user.id)"
         >
-          <div class="relative">
-            <div class="w-11 h-11 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-semibold text-sm ring-2 ring-white dark:ring-gray-900 group-hover:ring-brand-200 dark:group-hover:ring-brand-800 transition">
-              {{ getInitials(user) }}
-            </div>
-            <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></span>
-          </div>
+          <ChatAvatar
+              :user-id="user.id"
+              :firstname="user.firstname"
+              :lastname="user.lastname"
+              :online="true"
+              size="md"
+          />
           <span class="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[56px]">{{ user.firstname }}</span>
         </button>
       </div>
@@ -139,22 +145,15 @@
             @click="$emit('selectChat', chat.id)"
         >
           <!-- Avatar -->
-          <div v-if="chat.participant" class="relative shrink-0">
-            <div
-                class="w-11 h-11 rounded-full flex items-center justify-center font-semibold text-sm"
-                :class="[
-                  selectedChatId === chat.id
-                    ? 'bg-brand-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
-                ]"
-            >
-              {{ getInitials(chat.participant) }}
-            </div>
-            <span
-                v-if="chat.participant.is_online"
-                class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"
-            ></span>
-          </div>
+          <ChatAvatar
+              v-if="chat.participant"
+              :user-id="chat.participant.id"
+              :firstname="chat.participant.firstname"
+              :lastname="chat.participant.lastname"
+              :online="chat.participant.is_online"
+              size="md"
+              :variant="selectedChatId === chat.id ? 'solid' : 'neutral'"
+          />
 
           <!-- Info -->
           <div v-if="chat.participant" class="flex-1 min-w-0 text-left">
@@ -210,6 +209,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Chat, ChatUser } from '../types/chat'
+import ChatAvatar from './ChatAvatar.vue'
 
 interface SearchResult {
   user: ChatUser
@@ -292,10 +292,6 @@ function onClickOutside(e: MouseEvent) {
 
 onMounted(() => document.addEventListener('mousedown', onClickOutside))
 onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
-
-function getInitials(user: ChatUser): string {
-  return (user.lastname[0] + user.firstname[0]).toUpperCase()
-}
 
 function formatTime(timestamp: string): string {
   const date = new Date(timestamp)

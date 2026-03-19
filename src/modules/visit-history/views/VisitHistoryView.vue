@@ -29,7 +29,7 @@
     <div
         class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
     >
-      <div class="h-[calc(100vh-169px)] overflow-auto custom-calendar">
+      <div ref="calendarWrapRef" class="h-[calc(100vh-169px)] overflow-auto custom-calendar">
         <FullCalendar ref="calendarRef" class="min-h-screen" :options="calendarOptions" />
       </div>
 
@@ -41,10 +41,10 @@
 
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
-import type { EventInput } from '@fullcalendar/core'
+import type { DatesSetArg, EventClickArg, EventContentArg, EventInput, DateSelectArg } from '@fullcalendar/core'
 
 const currentPageTitle = ref('Журнал посещений')
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -57,22 +57,58 @@ import {visitHistoryWorkingHours} from "@/modules/visit-history/api/visitHistory
 
 
 const calendarRef = ref<InstanceType<typeof FullCalendar> | null>(null)
+const calendarWrapRef = ref<HTMLElement | null>(null)
 const barrierActionsModal = ref(false)
 const selectedDate = ref('')
 const barrierActionsTableTitle = ref('')
 
 const workingHours = ref<EventInput[]>([])
 
+let resizeObserver: ResizeObserver | null = null
+let resizeRaf = 0
+
+function scheduleCalendarResize() {
+  if (resizeRaf) cancelAnimationFrame(resizeRaf)
+  resizeRaf = requestAnimationFrame(() => {
+    resizeRaf = 0
+    calendarRef.value?.getApi()?.updateSize()
+  })
+}
 
 onMounted(() => {
-  loadWorkingHours()
+  const range = getVisibleRange()
+  if (range) loadWorkingHours(range.start, range.end)
+})
+
+onMounted(async () => {
+  await nextTick()
+  scheduleCalendarResize()
+
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => scheduleCalendarResize())
+    if (calendarWrapRef.value) resizeObserver.observe(calendarWrapRef.value)
+  }
+
+  window.addEventListener('resize', scheduleCalendarResize, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', scheduleCalendarResize)
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  if (resizeRaf) {
+    cancelAnimationFrame(resizeRaf)
+    resizeRaf = 0
+  }
 })
 
 const openModal = () => {
   barrierActionsModal.value = true
 }
 
-const handleDateSelect = (selectInfo) => {
+const handleDateSelect = (selectInfo: DateSelectArg) => {
   const date = new Date(selectInfo.startStr)
 
   // Названия дней недели по-русски
@@ -97,18 +133,19 @@ const handleDateSelect = (selectInfo) => {
   openModal()
 }
 
-const handleEventClick = (clickInfo) => {
+const handleEventClick = (clickInfo: EventClickArg) => {
   const fakeSelectInfo = {
     startStr: clickInfo.event.startStr,
     endStr: clickInfo.event.endStr,
     allDay: clickInfo.event.allDay,
   }
 
-  handleDateSelect(fakeSelectInfo)
+  handleDateSelect(fakeSelectInfo as unknown as DateSelectArg)
 }
 
-const renderEventContent = (eventInfo) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`
+const renderEventContent = (eventInfo: EventContentArg) => {
+  const cal = String((eventInfo.event.extendedProps as any)?.calendar ?? 'Primary')
+  const colorClass = `fc-bg-${cal.toLowerCase()}`
   return {
     html: `
       <div class="event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm">
@@ -154,7 +191,7 @@ const getVisibleRange = () => {
   return { start, end }
 }
 
-function handleDatesSet(dateInfo) {
+function handleDatesSet(dateInfo: DatesSetArg) {
   loadWorkingHours(dateInfo.start, dateInfo.end)
 }
 

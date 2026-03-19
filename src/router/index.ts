@@ -55,6 +55,15 @@ const routes = [
             title: 'Чат',
         }
     },
+    {
+        path: '/events-calendar',
+        name: 'events_calendar',
+        component: () => import('@/modules/events-calendar/views/EventsCalendarView.vue'),
+        meta: {
+            requiresAuth: true,
+            title: 'Календарь событий',
+        }
+    },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
     { path: '/test', name: 'test', component: TestView, meta: { requiresAuth: true } },
     { path: '/profile', name: 'profile', component: UserProfileView, meta: { requiresAuth: true } },

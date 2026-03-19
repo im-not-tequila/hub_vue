@@ -17,7 +17,7 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-center',
       ]"
     >
-      <router-link to="/docs">
+      <router-link to="/">
         <div class="flex items-center justify-between">
           <!-- Render both logos always, but control their visibility and width dynamically -->
           <img
@@ -260,6 +260,11 @@ const menuGroups = [
         icon: ChatIcon,
         name: "Чат",
         path: "/chat",
+      },
+      {
+        icon: CalenderIcon,
+        name: "Календарь событий",
+        path: "/events-calendar",
       }
     ],
   },

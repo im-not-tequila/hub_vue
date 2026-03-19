@@ -26,15 +26,14 @@
       </button>
 
       <template v-if="chat.participant">
-        <div class="relative">
-          <div class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-semibold text-sm">
-            {{ getInitials(chat.participant) }}
-          </div>
-          <span
-              v-if="chat.participant.is_online"
-              class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"
-          ></span>
-        </div>
+        <ChatAvatar
+            :user-id="chat.participant.id"
+            :firstname="chat.participant.firstname"
+            :lastname="chat.participant.lastname"
+            :online="chat.participant.is_online"
+            size="lg"
+            variant="solid"
+        />
 
         <div class="flex-1 min-w-0">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -83,27 +82,32 @@
             :class="msg.sender_id === currentUserId ? 'justify-end' : 'justify-start'"
         >
           <div
-              class="max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm"
+              class="relative max-w-[60%] min-w-0 overflow-hidden px-3 py-1.5 rounded-2xl shadow-sm"
               :class="[
                 msg.sender_id === currentUserId
                   ? 'bg-brand-500 text-white rounded-br-md'
                   : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white/90 rounded-bl-md border border-gray-100 dark:border-gray-700'
               ]"
           >
-            <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ msg.text }}</p>
-            <div class="flex items-center justify-end gap-1 mt-1">
+            <p class="text-sm leading-relaxed whitespace-pre-wrap break-all">{{ msg.text }}<span 
+              class="inline-block"
+              :class="msg.sender_id === currentUserId ? 'w-[3.5rem]' : 'w-[2.5rem]'"
+              ></span></p>
+            <span
+                class="absolute bottom-1.5 right-3 flex items-center gap-1"
+            >
               <span
                   v-if="msg.created_at"
-                  class="text-[10px]"
+                  class="text-[10px] leading-none"
                   :class="msg.sender_id === currentUserId ? 'text-white/60' : 'text-gray-400 dark:text-gray-500'"
               >
                 {{ formatMessageTime(msg.created_at) }}
               </span>
+              <!-- Single check (sent, not read) -->
               <svg
-                  v-if="msg.sender_id === currentUserId"
+                  v-if="msg.sender_id === currentUserId && !msg.is_read"
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-3.5 w-3.5"
-                  :class="msg.is_read ? 'text-white/90' : 'text-white/40'"
+                  class="h-3.5 w-3.5 text-white/40"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -111,7 +115,20 @@
               >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               </svg>
-            </div>
+              <!-- Double check (read) -->
+              <svg
+                  v-if="msg.sender_id === currentUserId && msg.is_read"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-white/90"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="m1.5 12.75 6 6 9-13.5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m7.5 12.75 6 6 9-13.5" />
+              </svg>
+            </span>
           </div>
         </div>
       </template>
@@ -160,6 +177,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import type { Chat, ChatMessage } from '../types/chat'
+import ChatAvatar from './ChatAvatar.vue'
 
 const props = defineProps<{
   chat: Chat | null
@@ -189,10 +207,6 @@ function autoResize(event: Event) {
   const el = event.target as HTMLTextAreaElement
   el.style.height = 'auto'
   el.style.height = Math.min(el.scrollHeight, 128) + 'px'
-}
-
-function getInitials(user: { lastname: string; firstname: string }): string {
-  return (user.lastname[0] + user.firstname[0]).toUpperCase()
 }
 
 function formatLastSeen(lastSeen: string | null): string {

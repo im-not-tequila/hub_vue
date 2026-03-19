@@ -1,9 +1,9 @@
 <template>
   <admin-layout :header="true">
-    <PageBreadcrumb page-title="Чат" />
+    <!-- <PageBreadcrumb page-title="Чат" /> -->
 
     <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] overflow-hidden">
-      <div class="flex h-[calc(100vh-170px)] min-h-[500px]">
+      <div class="flex h-[calc(100vh-110px)] min-h-[500px]">
         <!-- Sidebar -->
         <div
             class="shrink-0 transition-all duration-300"
@@ -52,6 +52,7 @@ import ChatConversation from '../components/ChatConversation.vue'
 import * as chatApi from '../api/chat.api'
 import type { Chat, ChatMessage, ChatUser } from '../types/chat'
 import { useUserStore } from '@/stores/userStore'
+import { useChatWebSocket } from '../composables/useChatWebSocket'
 
 const userStore = useUserStore()
 const currentUserId = computed(() => userStore.user?.id ?? 0)
@@ -141,6 +142,21 @@ async function onSendMessage(text: string) {
   }
 }
 
+async function handleWsMessage(data: any) {
+  if (data.type !== 'new_message') return
+
+  const chatId: number = data.chat_id
+
+  if (selectedChatId.value === chatId) {
+    await loadMessages(chatId)
+    await chatApi.markMessagesAsRead(chatId).catch(() => {})
+  }
+
+  await loadChats()
+}
+
+const { connect: connectWs, disconnect: disconnectWs } = useChatWebSocket(handleWsMessage)
+
 function checkMobile() {
   isMobile.value = window.innerWidth < 1024
 }
@@ -149,9 +165,11 @@ onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   await Promise.all([loadChats(), loadUsers()])
+  connectWs()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  disconnectWs()
 })
 </script>
