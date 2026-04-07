@@ -1,6 +1,5 @@
 <template>
-  <admin-layout>
-    <PageBreadcrumb :page-title="currentPageTitle"/>
+  <div>
     <ComponentCard>
       <template #header>
         <div class="flex items-center justify-between gap-3">
@@ -75,14 +74,12 @@
 
     </ComponentCard>
 
-  </admin-layout>
+  </div>
 
 </template>
 
 <script setup lang="ts">
 import WorkTabelTable from '@/modules/work-tabel/components/WorkTabelTable.vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import {onMounted, ref} from "vue";
 import {workTabel, workTabelExcel, getSubordinates} from "@/modules/work-tabel/api/workTabel.api";
@@ -98,7 +95,6 @@ import {AxiosError} from "axios";
 const userStore = useUserStore()
 
 const isLoading = ref(false)
-const currentPageTitle = ref('Рабочий табель')
 const tabels = ref<Tabel[]>([])
 
 const subdivisionId = ref<number | null>(null)

@@ -1,7 +1,5 @@
 <template>
-  <admin-layout ref="layoutRef" v-slot="slotProps">
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
-
+  <div>
     <div class="flex flex-row gap-4 w-full">
       <ComponentCard :collapsible="false" class="w-auto h-min">
         <div class="p-2">
@@ -60,19 +58,16 @@
         <a class="cursor-pointer text-blue-500" href="https://platonus.shakarim.kz/" target="_blank">нажмите сюда для редактирования профиля.</a>
       </p>
     </ComponentCard>
-  </admin-layout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import AdminLayout from "@/components/layout/AdminLayout.vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import BaseInput from "@/components/ui/BaseInput.vue";
 import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 import { useUserStore } from "@/stores/userStore";
 
-const currentPageTitle = ref('Ваш профиль')
 const userStore = useUserStore()
 
 const avatarSrc = computed(() => {

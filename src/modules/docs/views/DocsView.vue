@@ -1,6 +1,5 @@
 <template>
-  <admin-layout ref="layoutRef" v-slot="slotProps">
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
+  <div class="h-full flex flex-col">
     <CreateDocView
         :modelValue="modalIsOpen"
         @close="modalIsOpen = false"
@@ -14,194 +13,179 @@
         @close="showDocumentModalIsOpen = false"
     />
 
-    <div class="space-y-5 sm:space-y-6">
-      <ComponentCard :collapsible="false">
-        <template #header>
-          <div class="flex items-center justify-between gap-3">
-
-            <div class="inline-flex rounded-lg border border-gray-200 p-0.5 dark:border-gray-800">
-              <button
-                  type="button"
-                  class="px-3 py-1.5 font-medium rounded-md transition"
-                  :class="activeTab === 'incoming'
-                  ? 'bg-brand-500 text-white shadow-theme-xs'
-                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
-                  @click="setActiveTab('incoming')"
-              >
-                Входящие
-              </button>
-
-              <button
-                  type="button"
-                  class="px-3 py-1.5 font-medium rounded-md transition"
-                  :class="activeTab === 'outgoing'
-                  ? 'bg-brand-500 text-white shadow-theme-xs '
-                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
-                  @click="setActiveTab('outgoing')"
-              >
-                Исходящие
-              </button>
-
-              <button
-                  type="button"
-                  class="px-3 py-1.5 font-medium rounded-md transition"
-                  :class="activeTab === 'pendingExecution'
-                  ? 'bg-brand-500 text-white shadow-theme-xs '
-                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
-                  @click="setActiveTab('pendingExecution')"
-              >
-                На исполнении
-              </button>
-
-              <button
-                  type="button"
-                  class="px-3 py-1.5 font-medium rounded-md transition"
-                  :class="activeTab === 'executed'
-                  ? 'bg-brand-500 text-white shadow-theme-xs'
-                  : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
-                  @click="setActiveTab('executed')"
-              >
-                Исполненные
-              </button>
-            </div>
-
-            <BaseButton
-                :size="'sm'"
-                :start-icon="PlusIcon"
-                :variant="'primaryGreen'"
-                :disabled=false
-                @click="createDocumentClick()"
+    <div class="flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div class="shrink-0 px-6 py-5">
+        <div class="flex items-center justify-between gap-3">
+          <div class="inline-flex rounded-lg border border-gray-200 p-0.5 dark:border-gray-800">
+            <button
+                type="button"
+                class="px-3 py-1.5 font-medium rounded-md transition"
+                :class="activeTab === 'incoming'
+                ? 'bg-brand-500 text-white shadow-theme-xs'
+                : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
+                @click="setActiveTab('incoming')"
             >
-              Создать
-            </BaseButton>
+              Входящие
+            </button>
+            <button
+                type="button"
+                class="px-3 py-1.5 font-medium rounded-md transition"
+                :class="activeTab === 'outgoing'
+                ? 'bg-brand-500 text-white shadow-theme-xs '
+                : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
+                @click="setActiveTab('outgoing')"
+            >
+              Исходящие
+            </button>
+            <button
+                type="button"
+                class="px-3 py-1.5 font-medium rounded-md transition"
+                :class="activeTab === 'pendingExecution'
+                ? 'bg-brand-500 text-white shadow-theme-xs '
+                : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
+                @click="setActiveTab('pendingExecution')"
+            >
+              На исполнении
+            </button>
+            <button
+                type="button"
+                class="px-3 py-1.5 font-medium rounded-md transition"
+                :class="activeTab === 'executed'
+                ? 'bg-brand-500 text-white shadow-theme-xs'
+                : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-white/10'"
+                @click="setActiveTab('executed')"
+            >
+              Исполненные
+            </button>
           </div>
 
-          <div class="inline-flex gap-3 pt-4">
-            <CheckboxInput v-model="filters.signed" label="Согласованные"/>
-            <CheckboxInput v-model="filters.pending" label="На согласовании"/>
-            <CheckboxInput v-model="filters.rejected" label="Отклоненные"/>
-            <CheckboxInput v-model="filters.hidden" label="Скрытые"/>
-          </div>
-
-        </template>
-
-        <TableView
-            v-if="(activeTab === 'incoming') && incoming.length !== 0"
-            :docs="searchIncoming(slotProps.search)"
-            :show-hidden="filters.hidden"
-            :show-signed="filters.signed"
-            :show-pending="filters.pending"
-            :show-rejected="filters.rejected"
-            @view="viewDocument"
-            @download="downloadDocument"
-            @hide="hideDocument"
-            @unhide="unhideDocument"
-        />
-
-        <TableView
-            v-else-if="(activeTab === 'outgoing') && outgoing.length !== 0"
-            :docs="searchOutgoing(slotProps.search)"
-            :show-hidden="filters.hidden"
-            :show-signed="filters.signed"
-            :show-pending="filters.pending"
-            :show-rejected="filters.rejected"
-            @view="viewDocument"
-            @download="downloadDocument"
-            @revoke="revokeDocument"
-            @hide="hideDocument"
-            @unhide="unhideDocument"
-        />
-
-        <TableView
-            v-else-if="(activeTab === 'pendingExecution') && pendingExecution.length !== 0"
-            :docs="searchPendingExecution(slotProps.search)"
-            :show-hidden="filters.hidden"
-            :show-signed="filters.signed"
-            :show-pending="filters.pending"
-            :show-rejected="filters.rejected"
-            @view="viewDocument"
-            @download="downloadDocument"
-            @hide="hideDocument"
-            @unhide="unhideDocument"
-        />
-
-        <TableView
-            v-else-if="(activeTab === 'executed') && executed.length !== 0"
-            :docs="searchExecuted(slotProps.search)"
-            :show-hidden="filters.hidden"
-            :show-signed="filters.signed"
-            :show-pending="filters.pending"
-            :show-rejected="filters.rejected"
-            @view="viewDocument"
-            @download="downloadDocument"
-            @hide="hideDocument"
-            @unhide="unhideDocument"
-        />
-
-        <div v-else class="flex items-center justify-center h-64">
-
-          <div class="mx-auto w-full max-w-[630px] text-center">
-            <Loader v-if="isLoadingDocs"></Loader>
-            <div v-else>
-              <h3
-                  class="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
-              >
-                <span v-if="activeTab === 'incoming'">
-                  Нет входящих документов
-                </span>
-
-                <span v-else-if="activeTab === 'outgoing'">
-                  Нет исходящих документов
-                </span>
-
-                <span v-else-if="activeTab === 'pendingExecution'">
-                  Нет документов на исполнении
-                </span>
-
-                <span v-else>
-                  Нет исполненных документов
-                </span>
-              </h3>
-
-              <p class="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-                <span v-if="activeTab === 'incoming'">
-
-                  У вас пока нет входящих документов. Новые документы от других пользователей будут отображаться здесь.
-                </span>
-
-                <span v-else-if="activeTab === 'outgoing'">
-                  У вас пока нет исходящих документов. Как только вы создадите или отправите документ, он появится в этом разделе.
-                </span>
-
-                <span v-else-if="activeTab === 'pendingExecution'">
-                  У вас пока нет документов на исполнении. Как только вам отправят документ на исполнение, он появится в этом разделе.
-                </span>
-
-                <span v-else>
-                  У вас пока нет исполненных документов. Как только вы исполните какой-либо документ, он появится в этом разделе.
-                </span>
-              </p>
-            </div>
-          </div>
-
+          <BaseButton
+              :size="'sm'"
+              :start-icon="PlusIcon"
+              :variant="'primaryGreen'"
+              :disabled=false
+              @click="createDocumentClick()"
+          >
+            Создать
+          </BaseButton>
         </div>
 
-      </ComponentCard>
+        <div class="inline-flex gap-3 pt-4">
+          <CheckboxInput v-model="filters.signed" label="Согласованные"/>
+          <CheckboxInput v-model="filters.pending" label="На согласовании"/>
+          <CheckboxInput v-model="filters.rejected" label="Отклоненные"/>
+          <CheckboxInput v-model="filters.hidden" label="Скрытые"/>
+        </div>
+      </div>
+
+      <div class="flex-1 min-h-0 flex flex-col border-t border-gray-100 dark:border-gray-800">
+        <div class="flex-1 min-h-0 p-4 sm:p-6">
+          <TableView
+              v-if="(activeTab === 'incoming') && incoming.length !== 0"
+              :docs="searchIncoming(search ?? '')"
+              :show-hidden="filters.hidden"
+              :show-signed="filters.signed"
+              :show-pending="filters.pending"
+              :show-rejected="filters.rejected"
+              @view="viewDocument"
+              @download="downloadDocument"
+              @hide="hideDocument"
+              @unhide="unhideDocument"
+          />
+
+          <TableView
+              v-else-if="(activeTab === 'outgoing') && outgoing.length !== 0"
+              :docs="searchOutgoing(search ?? '')"
+              :show-hidden="filters.hidden"
+              :show-signed="filters.signed"
+              :show-pending="filters.pending"
+              :show-rejected="filters.rejected"
+              @view="viewDocument"
+              @download="downloadDocument"
+              @revoke="revokeDocument"
+              @hide="hideDocument"
+              @unhide="unhideDocument"
+          />
+
+          <TableView
+              v-else-if="(activeTab === 'pendingExecution') && pendingExecution.length !== 0"
+              :docs="searchPendingExecution(search ?? '')"
+              :show-hidden="filters.hidden"
+              :show-signed="filters.signed"
+              :show-pending="filters.pending"
+              :show-rejected="filters.rejected"
+              @view="viewDocument"
+              @download="downloadDocument"
+              @hide="hideDocument"
+              @unhide="unhideDocument"
+          />
+
+          <TableView
+              v-else-if="(activeTab === 'executed') && executed.length !== 0"
+              :docs="searchExecuted(search ?? '')"
+              :show-hidden="filters.hidden"
+              :show-signed="filters.signed"
+              :show-pending="filters.pending"
+              :show-rejected="filters.rejected"
+              @view="viewDocument"
+              @download="downloadDocument"
+              @hide="hideDocument"
+              @unhide="unhideDocument"
+          />
+
+          <div v-else class="flex items-center justify-center h-full">
+            <div class="mx-auto w-full max-w-[630px] text-center">
+              <Loader v-if="isLoadingDocs"></Loader>
+              <div v-else>
+                <h3
+                    class="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl"
+                >
+                  <span v-if="activeTab === 'incoming'">
+                    Нет входящих документов
+                  </span>
+                  <span v-else-if="activeTab === 'outgoing'">
+                    Нет исходящих документов
+                  </span>
+                  <span v-else-if="activeTab === 'pendingExecution'">
+                    Нет документов на исполнении
+                  </span>
+                  <span v-else>
+                    Нет исполненных документов
+                  </span>
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
+                  <span v-if="activeTab === 'incoming'">
+                    У вас пока нет входящих документов. Новые документы от других пользователей будут отображаться здесь.
+                  </span>
+                  <span v-else-if="activeTab === 'outgoing'">
+                    У вас пока нет исходящих документов. Как только вы создадите или отправите документ, он появится в этом разделе.
+                  </span>
+                  <span v-else-if="activeTab === 'pendingExecution'">
+                    У вас пока нет документов на исполнении. Как только вам отправят документ на исполнение, он появится в этом разделе.
+                  </span>
+                  <span v-else>
+                    У вас пока нет исполненных документов. Как только вы исполните какой-либо документ, он появится в этом разделе.
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </admin-layout>
+  </div>
 </template>
 
 <script setup lang="ts">
+import type { Ref } from 'vue'
 import {
   ref,
+  inject,
   onMounted,
   reactive,
   watch
 } from 'vue'
 
-import AdminLayout from '@/components/layout/AdminLayout.vue';
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
-import ComponentCard from '@/components/common/ComponentCard.vue';
 import BaseButton from "@/components/ui/BaseButton.vue";
 import { PlusIcon } from "@/components/icons";
 
@@ -223,9 +207,8 @@ import CheckboxInput from "@/components/ui/CheckboxInput.vue";
 
 
 const route = useRoute()
-const layoutRef = ref<any>(null)
-
-const currentPageTitle = ref('Документы')
+defineProps<{ search?: string }>()
+const layoutRef = inject<Ref<{ search: { value: string } }>>('layoutRef')!
 const activeTab = ref<'incoming' | 'outgoing' | 'pendingExecution' | 'executed'>('incoming')
 const modalIsOpen = ref(false)
 const showDocumentModalIsOpen = ref(false)
@@ -343,7 +326,7 @@ watch(
 )
 
 function setActiveTab(tab: 'incoming' | 'outgoing' | 'pendingExecution' | 'executed') {
-  layoutRef.value.search = ''
+  if (layoutRef.value?.search) layoutRef.value.search.value = ''
   activeTab.value = tab
 }
 

@@ -1,8 +1,5 @@
 <template>
-  <admin-layout ref="layoutRef" v-slot="slotProps">
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
-
-    <div class="p-6">
+  <div class="p-6">
       <h1 class="text-2xl font-bold mb-6">Icon Gallery</h1>
       <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-6">
         <div
@@ -16,17 +13,11 @@
       </div>
     </div>
 
-  </admin-layout>
 </template>
 
 <script setup lang="ts">
-import TableView from './TableView.vue'
-import AdminLayout from "@/components/layout/AdminLayout.vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import {ref, defineAsyncComponent} from "vue";
 
-
-const currentPageTitle = ref('Образцы документов')
 
 const iconModules = import.meta.glob('@/components/icons/*.vue', { eager: true })
 

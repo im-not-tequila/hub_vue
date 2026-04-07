@@ -7,66 +7,62 @@ const HomeView = () => import('@/modules/home/views/HomeView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
 const TestView = () => import('@/views/TestView.vue')
 const UserProfileView = () => import('@/modules/user-profile/views/UserProfileView.vue')
+const LayoutWithBreadcrumb = () => import('@/components/layout/LayoutWithBreadcrumb.vue')
 
 const routes = [
-    { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true } },
-    {
-        path: '/docs',
-        name: 'docs',
-        component: () => import('@/modules/docs/views/DocsView.vue'),
-        meta: {
-            requiresAuth: true,
-            title: 'eCommerce Dashboard',
-        }
-    },
-    {
-        path: '/visit-history',
-        name: 'visit_history',
-        component: () => import('@/modules/visit-history/views/VisitHistoryView.vue'),
-        meta: {
-            requiresAuth: true,
-            title: 'eCommerce Dashboard',
-        }
-    },
-    {
-        path: '/sample-documents',
-        name: 'sample_documents',
-        component: () => import('@/modules/sample-documents/views/SampleDocumentsView.vue'),
-        meta: {
-            requiresAuth: true,
-            title: 'eCommerce Dashboard',
-        }
-    },
-    {
-        path: '/work-tabel',
-        name: 'work_tabel',
-        component: () => import('@/modules/work-tabel/views/WorkTabelView.vue'),
-        meta: {
-            requiresAuth: true,
-            title: 'Work Tabel',
-        }
-    },
-    {
-        path: '/chat',
-        name: 'chat',
-        component: () => import('@/modules/chat/views/ChatView.vue'),
-        meta: {
-            requiresAuth: true,
-            title: 'Чат',
-        }
-    },
-    {
-        path: '/events-calendar',
-        name: 'events_calendar',
-        component: () => import('@/modules/events-calendar/views/EventsCalendarView.vue'),
-        meta: {
-            requiresAuth: true,
-            title: 'Календарь событий',
-        }
-    },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
-    { path: '/test', name: 'test', component: TestView, meta: { requiresAuth: true } },
-    { path: '/profile', name: 'profile', component: UserProfileView, meta: { requiresAuth: true } },
+    {
+        path: '/',
+        component: LayoutWithBreadcrumb,
+        meta: { requiresAuth: true },
+        children: [
+            { path: '', name: 'home', component: HomeView, meta: { requiresAuth: true, title: 'Главная страница' } },
+            {
+                path: 'docs',
+                name: 'docs',
+                component: () => import('@/modules/docs/views/DocsView.vue'),
+                meta: { requiresAuth: true, title: 'Документы' },
+            },
+            {
+                path: 'visit-history',
+                name: 'visit_history',
+                component: () => import('@/modules/visit-history/views/VisitHistoryView.vue'),
+                meta: { requiresAuth: true, title: 'Журнал посещений' },
+            },
+            {
+                path: 'sample-documents',
+                name: 'sample_documents',
+                component: () => import('@/modules/sample-documents/views/SampleDocumentsView.vue'),
+                meta: { requiresAuth: true, title: 'Образцы документов' },
+            },
+            {
+                path: 'normative-documents',
+                name: 'normative_documents',
+                component: () => import('@/modules/normative-documents/views/NormativeDocumentsView.vue'),
+                meta: { requiresAuth: true, title: 'Нормативные документы' },
+            },
+            {
+                path: 'work-tabel',
+                name: 'work_tabel',
+                component: () => import('@/modules/work-tabel/views/WorkTabelView.vue'),
+                meta: { requiresAuth: true, title: 'Рабочий табель' },
+            },
+            {
+                path: 'chat',
+                name: 'chat',
+                component: () => import('@/modules/chat/views/ChatView.vue'),
+                meta: { requiresAuth: true, title: 'Чат' },
+            },
+            {
+                path: 'events-calendar',
+                name: 'events_calendar',
+                component: () => import('@/modules/events-calendar/views/EventsCalendarView.vue'),
+                meta: { requiresAuth: true, title: 'Календарь событий' },
+            },
+            { path: 'test', name: 'test', component: TestView, meta: { requiresAuth: true, title: 'Образцы документов' } },
+            { path: 'profile', name: 'profile', component: UserProfileView, meta: { requiresAuth: true, title: 'Ваш профиль' } },
+        ],
+    },
 ]
 
 const router = createRouter({

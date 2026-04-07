@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout>
+  <div class="h-full flex flex-col">
     <Modal
         :title="barrierActionsTableTitle"
         :model-value="barrierActionsModal"
@@ -25,25 +25,20 @@
       </template>
     </Modal>
 
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div
-        class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+        class="flex-1 min-h-0 flex flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
     >
-      <div ref="calendarWrapRef" class="h-[calc(100vh-169px)] overflow-auto custom-calendar">
+      <div ref="calendarWrapRef" class="flex-1 min-h-0 overflow-auto custom-calendar">
         <FullCalendar ref="calendarRef" class="min-h-screen" :options="calendarOptions" />
       </div>
 
     </div>
-  </AdminLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
-
-import AdminLayout from "@/components/layout/AdminLayout.vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import type { DatesSetArg, EventClickArg, EventContentArg, EventInput, DateSelectArg } from '@fullcalendar/core'
 
-const currentPageTitle = ref('Журнал посещений')
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'

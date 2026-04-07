@@ -9,11 +9,11 @@
       leave-to-class="opacity-0"
   >
   <div
-      class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+      class="h-full overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
   >
-    <div class="max-w-full  custom-scrollbar">
-      <div class="overflow-x-auto"> <!-- Добавляем overflow-x-auto для горизонтального скролла, если таблица будет шире -->
-        <div class="h-[calc(100vh-300px)]  overflow-y-auto"> <!-- Обертка для вертикального скролла -->
+    <div class="h-full max-w-full custom-scrollbar">
+      <div class="h-full overflow-x-auto">
+        <div class="h-full overflow-y-auto">
           <table class="min-w-full table-fixed border-collapse">
             <colgroup>
               <!-- Первая колонка: широкая, растягивается -->

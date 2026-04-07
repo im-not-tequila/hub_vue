@@ -1,9 +1,6 @@
 <template>
-  <admin-layout :header="true">
-    <!-- <PageBreadcrumb page-title="Чат" /> -->
-
-    <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] overflow-hidden">
-      <div class="flex h-[calc(100vh-110px)] min-h-[500px]">
+  <div class="h-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] overflow-hidden">
+      <div class="flex h-full min-h-[500px]">
         <!-- Sidebar -->
         <div
             class="shrink-0 transition-all duration-300"
@@ -40,13 +37,10 @@
         </div>
       </div>
     </div>
-  </admin-layout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import ChatSidebar from '../components/ChatSidebar.vue'
 import ChatConversation from '../components/ChatConversation.vue'
 import * as chatApi from '../api/chat.api'

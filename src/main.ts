@@ -22,15 +22,23 @@ app.component('ApexChart', VueApexCharts)
 
 const ui = useUiStore()
 
-// const userStore = useUserStore()
-// await userStore.loadUser()
+// Показываем спиннер только если навигация длится дольше 1.5 сек
+const LOADER_DELAY_MS = 1500
+let loaderTimeoutId: ReturnType<typeof setTimeout> | null = null
 
 router.beforeEach((to, from, next) => {
-    ui.showLoader()
+    loaderTimeoutId = setTimeout(() => {
+        ui.showLoader()
+        loaderTimeoutId = null
+    }, LOADER_DELAY_MS)
     next()
 })
 
 router.afterEach(() => {
+    if (loaderTimeoutId) {
+        clearTimeout(loaderTimeoutId)
+        loaderTimeoutId = null
+    }
     setTimeout(() => ui.hideLoader(), 300) // чуть задержим для плавности
 })
 

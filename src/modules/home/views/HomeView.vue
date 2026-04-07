@@ -1,10 +1,7 @@
 <template>
-  <AdminLayout>
-    <PageBreadcrumb :page-title="currentPageTitle" />
-
-    <div class="grid gap-6 lg:grid-cols-[20vw_1fr]">
+  <div class="h-full grid gap-6 lg:grid-cols-[20vw_1fr]">
       <!-- Мобильное приложение -->
-      <section class="max-h-[calc(100vh-160px)] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <section class="overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="mb-4 flex items-center justify-center gap-4 text-center">
           <div class="min-w-0">
             <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Мобильное приложение</h2>
@@ -38,7 +35,7 @@
       </section>
 
       <!-- Мини-календарь -->
-      <section class="max-h-[calc(100vh-160px)] rounded-2xl overflow-y-auto border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <section class="rounded-2xl overflow-y-auto border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Календарь событий</h2>
@@ -51,14 +48,11 @@
         </div>
       </section>
     </div>
-  </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -70,7 +64,6 @@ import type { CalendarApiEvent } from '@/modules/events-calendar/types/eventsCal
 import appQrCode from '@/assets/app-qr-code.png'
 import instructionVideo from '@/assets/mobile-app-instruction.mp4'
 
-const currentPageTitle = 'Главная'
 const router = useRouter()
 
 function goToCalendar() {

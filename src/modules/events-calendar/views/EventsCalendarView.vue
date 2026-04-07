@@ -1,7 +1,5 @@
 <template>
-  <AdminLayout>
-    <PageBreadcrumb :page-title="currentPageTitle" />
-
+  <div class="h-full flex flex-col">
     <!-- Сообщения (заглушки для визуала) -->
     <div v-if="false" class="mb-4 space-y-2">
       <div class="rounded-xl border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-800 dark:bg-success-900/20 dark:border-success-800 dark:text-success-200 flex items-center justify-between">
@@ -10,10 +8,10 @@
       </div>
     </div>
 
-    <div class="events-calendar-layout rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden flex relative">
+    <div class="events-calendar-layout flex-1 min-h-0 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden flex relative">
       <!-- Фильтры слева -->
       <aside
-        class="events-calendar-filters py-6 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] flex flex-col gap-4 transition-all duration-200 ease-out will-change-transform"
+        class="events-calendar-filters py-6 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] flex flex-col gap-4 transition-all duration-300 ease-out will-change-transform"
         :class="filtersCollapsed ? 'w-0 -translate-x-full overflow-hidden p-0 border-r-0' : 'w-70 translate-x-0 p-4'"
       >
         <div class="absolute right-[0px] top-0 z-10">
@@ -89,7 +87,7 @@
       <button
         v-if="filtersCollapsed"
         type="button"
-        class="absolute left-0 top-0 z-10 rounded-r-lg border-r border-b border-gray-200 bg-white px-1 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        class="absolute left-0 top-0 z-10 rounded-r-lg border-r border-b border-gray-200 bg-white px-1 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-all"
         aria-label="Показать фильтры"
         @click="toggleFilters"
       >
@@ -384,13 +382,11 @@
         </div>
       </template>
     </Modal>
-  </AdminLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/ui/Modal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -406,7 +402,6 @@ import SettingsIcon from '@/components/icons/SettingsIcon.vue'
 import type { SelectOpt } from '../types/eventsCalendar'
 
 const {
-  currentPageTitle,
   calendarRef,
   calendarWrapRef,
   lang,
@@ -530,7 +525,6 @@ function downloadMediaPlan() {
 
 <style scoped>
 .events-calendar-layout {
-  height: calc(100vh - 160px);
   min-height: 400px;
 }
 .events-calendar-wrap {

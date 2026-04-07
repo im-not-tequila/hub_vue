@@ -1,7 +1,8 @@
 <template>
   <aside
       :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen overflow-x-hidden z-50 border-r border-gray-200',
+      'transition-[width,transform] duration-300 ease-in-out',
       {
         'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
@@ -14,18 +15,17 @@
     <div
         :class="[
         'py-8 flex',
-        !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-center',
+        // (isExpanded || isHovered || isMobileOpen) ? 'justify-start' : 'lg:justify-center justify-center',
       ]"
     >
-      <router-link to="/">
-        <div class="flex items-center justify-between">
-          <!-- Render both logos always, but control their visibility and width dynamically -->
+      <router-link to="/" class="flex items-center">
+        <div class="flex items-center shrink-0">
           <img
               class="dark:hidden transition-all duration-300"
               src="../../../assets/logo/logo_blue_nobg_256.png"
               alt="Logo"
               :class="{
-              'w-[80px]': isExpanded || isHovered || isMobileOpen,
+              'w-[60px]': isExpanded || isHovered || isMobileOpen,
               'w-[50px]': !(isExpanded || isHovered || isMobileOpen)
             }"
           />
@@ -34,11 +34,20 @@
               src="../../../assets/logo/logo_white_nobg_256.png"
               alt="Logo"
               :class="{
-              'w-[80px]': isExpanded || isHovered || isMobileOpen,
+              'w-[60px]': isExpanded || isHovered || isMobileOpen,
               'w-[50px]': !(isExpanded || isHovered || isMobileOpen)
             }"
           />
         </div>
+        <Transition name="sidebar-text">
+          <div
+              v-if="isExpanded || isHovered || isMobileOpen"
+              class="ml-3 flex flex-col leading-tight overflow-hidden"
+          >
+            <span class="text-3xl font-semibold text-gray-900 dark:text-white">Shakarim</span>
+            <span class="text-3xl font-semibold text-gray-900 dark:text-white">Hub</span>
+          </div>
+        </Transition>
       </router-link>
     </div>
     <div
@@ -55,10 +64,16 @@
                   : 'justify-start',
               ]"
             >
-              <template v-if="isExpanded || isHovered || isMobileOpen">
-                {{ menuGroup.title }}
-              </template>
-              <HorizontalDots v-else />
+              <Transition name="sidebar-text" mode="out-in">
+                <span
+                    v-if="isExpanded || isHovered || isMobileOpen"
+                    key="title"
+                    class="inline-block"
+                >{{ menuGroup.title }}</span>
+                <span v-else key="dots" class="inline-flex">
+                  <!-- <HorizontalDots /> -->
+                </span>
+              </Transition>
             </h2>
             <ul class="flex flex-col gap-4">
               <li v-for="(item, index) in menuGroup.items" :key="item.name">
@@ -85,11 +100,13 @@
                   >
                     <component :is="item.icon" />
                   </span>
-                  <span
-                      v-if="isExpanded || isHovered || isMobileOpen"
-                      class="menu-item-text"
-                  >{{ item.name }}</span
-                  >
+                  <Transition name="sidebar-text">
+                    <span
+                        v-if="isExpanded || isHovered || isMobileOpen"
+                        key="text"
+                        class="menu-item-text"
+                    >{{ item.name }}</span>
+                  </Transition>
                   <ChevronDownIcon
                       v-if="isExpanded || isHovered || isMobileOpen"
                       :class="[
@@ -123,11 +140,13 @@
                   >
                     <component :is="item.icon" />
                   </span>
-                  <span
-                      v-if="isExpanded || isHovered || isMobileOpen"
-                      class="menu-item-text"
-                  >{{ item.name }}</span
-                  >
+                  <Transition name="sidebar-text">
+                    <span
+                        v-if="isExpanded || isHovered || isMobileOpen"
+                        key="text"
+                        class="menu-item-text"
+                    >{{ item.name }}</span>
+                  </Transition>
                 </router-link>
                 <transition
                     @enter="startTransition"
@@ -252,6 +271,11 @@ const menuGroups = [
         path: "/sample-documents",
       },
       {
+        icon: ListIcon,
+        name: "Нормативные документы",
+        path: "/normative-documents",
+      },
+      {
         icon: TableIcon,
         name: "Рабочий табель",
         path: "/work-tabel",
@@ -309,3 +333,21 @@ const endTransition = (el) => {
   el.style.height = "";
 };
 </script>
+
+<style scoped>
+.sidebar-text-enter-active,
+.sidebar-text-leave-active {
+  transition: opacity 0.3s ease-in-out;
+}
+.sidebar-text-enter-from,
+.sidebar-text-leave-to {
+  opacity: 0;
+}
+
+/* Предотвращаем перенос текста при сворачивании — иконки не скачут */
+.menu-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+</style>
