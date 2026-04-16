@@ -46,9 +46,11 @@ import ChatConversation from '../components/ChatConversation.vue'
 import * as chatApi from '../api/chat.api'
 import type { Chat, ChatMessage, ChatUser } from '../types/chat'
 import { useUserStore } from '@/stores/userStore'
+import { useChatPresenceStore } from '@/stores/chatPresenceStore'
 import { useChatWebSocket } from '../composables/useChatWebSocket'
 
 const userStore = useUserStore()
+const chatPresenceStore = useChatPresenceStore()
 const currentUserId = computed(() => userStore.user?.id ?? 0)
 
 const chats = ref<Chat[]>([])
@@ -100,6 +102,7 @@ async function onSelectChat(chatId: number) {
     try {
       await chatApi.markMessagesAsRead(chatId)
       chat.unread_count = 0
+      void chatPresenceStore.refreshUnreadCount()
     } catch (e) {
       console.error('Failed to mark as read:', e)
     }
@@ -122,11 +125,28 @@ async function onSelectUser(userId: number) {
   }
 }
 
-async function onSendMessage(text: string) {
+interface SendPayload {
+  text: string
+  files: File[]
+}
+
+async function onSendMessage(payload: SendPayload) {
   if (!selectedChatId.value) return
 
   try {
-    const { data: newMsg } = await chatApi.sendMessage(selectedChatId.value, { text })
+    const attachmentIds: number[] = []
+    if (payload.files.length > 0) {
+      const uploadResults = await Promise.all(
+          payload.files.map(file => chatApi.uploadAttachment(selectedChatId.value as number, file)),
+      )
+      uploadResults.forEach(result => attachmentIds.push(result.data.id))
+    }
+
+    const text = payload.text.trim()
+    const { data: newMsg } = await chatApi.sendMessage(selectedChatId.value, {
+      text: text || undefined,
+      attachment_ids: attachmentIds.length > 0 ? attachmentIds : undefined,
+    })
     currentMessages.value.push(newMsg)
 
     const chat = chats.value.find(c => c.id === selectedChatId.value)
@@ -137,6 +157,55 @@ async function onSendMessage(text: string) {
 }
 
 async function handleWsMessage(data: any) {
+  if (data.type === 'presence_changed') {
+    const userId: number = data.user_id
+    const isOnline: boolean = Boolean(data.is_online)
+    const lastSeen: string | null = data.last_seen ?? null
+
+    users.value = users.value.map((user) => {
+      if (user.id !== userId) return user
+      return {
+        ...user,
+        is_online: isOnline,
+        last_seen: isOnline ? null : lastSeen,
+      }
+    })
+
+    chats.value = chats.value.map((chat) => {
+      if (!chat.participant || chat.participant.id !== userId) return chat
+      return {
+        ...chat,
+        participant: {
+          ...chat.participant,
+          is_online: isOnline,
+          last_seen: isOnline ? null : lastSeen,
+        },
+      }
+    })
+    return
+  }
+
+  if (data.type === 'messages_read') {
+    const chatId: number = data.chat_id
+    const readerId: number = data.reader_id
+    if (readerId === currentUserId.value) return
+
+    if (selectedChatId.value === chatId) {
+      currentMessages.value = currentMessages.value.map((message) => {
+        if (message.chat_id === chatId && message.sender_id === currentUserId.value && !message.is_read) {
+          return { ...message, is_read: true }
+        }
+        return message
+      })
+    }
+
+    const chat = chats.value.find(c => c.id === chatId)
+    if (chat?.last_message && chat.last_message.sender_id === currentUserId.value) {
+      chat.last_message = { ...chat.last_message, is_read: true }
+    }
+    return
+  }
+
   if (data.type !== 'new_message') return
 
   const chatId: number = data.chat_id
@@ -144,6 +213,7 @@ async function handleWsMessage(data: any) {
   if (selectedChatId.value === chatId) {
     await loadMessages(chatId)
     await chatApi.markMessagesAsRead(chatId).catch(() => {})
+    void chatPresenceStore.refreshUnreadCount()
   }
 
   await loadChats()

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { User } from '@/types/user'
 import * as userApi from '@/api/user.api'
 import { useNotificationsStore } from '@/stores/notificationsStore'
+import { useChatPresenceStore } from '@/stores/chatPresenceStore'
 
 
 
@@ -30,12 +31,16 @@ export const useUserStore = defineStore('user', {
             this.user = user
             const notificationsStore = useNotificationsStore()
             notificationsStore.connect()
+            const chatPresenceStore = useChatPresenceStore()
+            chatPresenceStore.resetAndConnect()
         },
 
         clearUser() {
             this.user = null
             const notificationsStore = useNotificationsStore()
             notificationsStore.disconnect()
+            const chatPresenceStore = useChatPresenceStore()
+            chatPresenceStore.disconnect()
         },
 
         async logout() {

@@ -82,20 +82,58 @@
             :class="msg.sender_id === currentUserId ? 'justify-end' : 'justify-start'"
         >
           <div
-              class="relative max-w-[60%] min-w-0 overflow-hidden px-3 py-1.5 rounded-2xl shadow-sm"
+              class="max-w-[70%] min-w-0 overflow-hidden px-3 py-2 rounded-2xl shadow-sm"
               :class="[
                 msg.sender_id === currentUserId
                   ? 'bg-brand-500 text-white rounded-br-md'
                   : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white/90 rounded-bl-md border border-gray-100 dark:border-gray-700'
               ]"
           >
-            <p class="text-sm leading-relaxed whitespace-pre-wrap break-all">{{ msg.text }}<span 
-              class="inline-block"
-              :class="msg.sender_id === currentUserId ? 'w-[3.5rem]' : 'w-[2.5rem]'"
-              ></span></p>
-            <span
-                class="absolute bottom-1.5 right-3 flex items-center gap-1"
+            <div v-if="msg.attachments.length > 0" class="space-y-2 mb-1.5">
+              <div
+                v-for="attachment in msg.attachments"
+                :key="attachment.id"
+                class="overflow-hidden"
+              >
+                <button
+                  v-if="isImageAttachment(attachment)"
+                  type="button"
+                  class="block cursor-zoom-in"
+                  @click="openImageModal(attachment)"
+                >
+                  <img
+                    :src="resolveAttachmentUrl(attachment.url)"
+                    :alt="attachment.original_name"
+                    class="rounded-xl max-h-72 w-auto object-cover"
+                  />
+                </button>
+
+                <a
+                  v-else
+                  :href="resolveAttachmentUrl(attachment.url)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-2 rounded-xl px-3 py-2 bg-black/10 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/15 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H6.75A2.25 2.25 0 0 0 4.5 4.5v15A2.25 2.25 0 0 0 6.75 21.75h10.5A2.25 2.25 0 0 0 19.5 19.5V17.25m-6-9 2.25 2.25m0 0L18 8.25m-2.25 2.25V15" />
+                  </svg>
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium truncate">{{ attachment.original_name }}</p>
+                    <p class="text-[11px] opacity-70">{{ formatBytes(attachment.size_bytes) }}</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            <p
+              v-if="msg.text"
+              class="text-sm leading-relaxed whitespace-pre-wrap break-all"
             >
+              {{ msg.text }}
+            </p>
+
+            <div class="mt-1 flex items-center justify-end gap-1">
               <span
                   v-if="msg.created_at"
                   class="text-[10px] leading-none"
@@ -128,7 +166,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="m1.5 12.75 6 6 9-13.5" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="m7.5 12.75 6 6 9-13.5" />
               </svg>
-            </span>
+            </div>
           </div>
         </div>
       </template>
@@ -136,8 +174,29 @@
 
     <!-- Input -->
     <div class="px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shrink-0">
+      <div v-if="selectedFiles.length > 0" class="mb-2 flex flex-wrap gap-2">
+        <div
+          v-for="(file, index) in selectedFiles"
+          :key="`${file.name}-${file.lastModified}-${index}`"
+          class="flex items-center gap-2 rounded-lg bg-gray-100 dark:bg-gray-800 px-2 py-1"
+        >
+          <span class="text-xs text-gray-700 dark:text-gray-200 max-w-[180px] truncate">{{ file.name }}</span>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            @click="removeFile(index)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <div class="flex items-end gap-2">
-        <button class="p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition shrink-0">
+        <button
+          class="p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition shrink-0"
+          @click="openFilePicker"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
           </svg>
@@ -158,11 +217,11 @@
         <button
             class="p-2.5 rounded-xl transition shrink-0"
             :class="[
-              newMessage.trim()
+              canSend
                 ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
             ]"
-            :disabled="!newMessage.trim()"
+            :disabled="!canSend"
             @click="sendMessage"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -170,13 +229,93 @@
           </svg>
         </button>
       </div>
+      <input
+        ref="fileInputRef"
+        type="file"
+        multiple
+        class="hidden"
+        @change="onFilesSelected"
+      />
     </div>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="isImageModalOpen"
+      class="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+      @click="closeImageModal"
+    >
+      <div
+        class="w-full max-w-6xl max-h-full bg-gray-900 rounded-xl border border-gray-700 shadow-2xl flex flex-col"
+        @click.stop
+      >
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-700">
+          <p class="text-sm text-white/90 truncate flex-1">{{ modalImageName }}</p>
+          <a
+            :href="modalImageUrl"
+            :download="modalImageName"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-xs hover:bg-brand-600 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-12-7.5L12 12m0 0 3-3m-3 3V3" />
+            </svg>
+            Скачать
+          </a>
+          <button
+            type="button"
+            class="p-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition"
+            @click="closeImageModal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="px-4 py-2 border-b border-gray-700 flex items-center gap-2 text-white">
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 text-sm transition"
+            @click="zoomOut"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 text-sm transition"
+            @click="zoomIn"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 text-xs transition"
+            @click="resetZoom"
+          >
+            100%
+          </button>
+          <span class="text-xs text-gray-300 ml-1">{{ Math.round(imageZoom * 100) }}%</span>
+        </div>
+
+        <div class="flex-1 overflow-auto bg-black/50 p-4">
+          <div class="w-full h-full flex items-center justify-center">
+            <img
+              :src="modalImageUrl"
+              :alt="modalImageName"
+              class="max-w-none select-none"
+              :style="{ transform: `scale(${imageZoom})`, transformOrigin: 'center center' }"
+              @wheel.prevent="onImageWheel"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import type { Chat, ChatMessage } from '../types/chat'
+import { computed, onUnmounted, ref, watch, nextTick } from 'vue'
+import type { Chat, ChatAttachment, ChatMessage } from '../types/chat'
 import ChatAvatar from './ChatAvatar.vue'
 
 const props = defineProps<{
@@ -186,18 +325,42 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'send', text: string): void
+  (e: 'send', payload: { text: string; files: File[] }): void
   (e: 'back'): void
 }>()
 
 const newMessage = ref('')
+const selectedFiles = ref<File[]>([])
 const messagesContainer = ref<HTMLElement | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const apiBaseUrl = (import.meta.env.VITE_API_URL as string)?.replace(/\/$/, '') ?? ''
+
+const apiOrigin = (() => {
+  try {
+    if (apiBaseUrl) return new URL(apiBaseUrl).origin
+  } catch {
+    // ignore malformed env value and fallback below
+  }
+  return window.location.origin
+})()
+
+const canSend = computed(() => {
+  return newMessage.value.trim().length > 0 || selectedFiles.value.length > 0
+})
+const isImageModalOpen = ref(false)
+const modalImageUrl = ref('')
+const modalImageName = ref('')
+const imageZoom = ref(1)
 
 function sendMessage() {
-  if (!newMessage.value.trim()) return
-  emit('send', newMessage.value.trim())
+  if (!canSend.value) return
+  emit('send', { text: newMessage.value.trim(), files: selectedFiles.value })
   newMessage.value = ''
+  selectedFiles.value = []
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
   if (textareaRef.value) {
     textareaRef.value.style.height = 'auto'
   }
@@ -207,6 +370,93 @@ function autoResize(event: Event) {
   const el = event.target as HTMLTextAreaElement
   el.style.height = 'auto'
   el.style.height = Math.min(el.scrollHeight, 128) + 'px'
+}
+
+function openFilePicker() {
+  fileInputRef.value?.click()
+}
+
+function onFilesSelected(event: Event) {
+  const target = event.target as HTMLInputElement
+  const files = Array.from(target.files ?? [])
+  if (files.length === 0) return
+  selectedFiles.value = [...selectedFiles.value, ...files]
+  target.value = ''
+}
+
+function removeFile(index: number) {
+  selectedFiles.value.splice(index, 1)
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function isImageAttachment(attachment: ChatAttachment): boolean {
+  if (attachment.type === 'image' || attachment.mime_type.startsWith('image/')) {
+    return true
+  }
+
+  const lowerName = attachment.original_name.toLowerCase()
+  return (
+    lowerName.endsWith('.jpg')
+    || lowerName.endsWith('.jpeg')
+    || lowerName.endsWith('.png')
+    || lowerName.endsWith('.gif')
+    || lowerName.endsWith('.webp')
+    || lowerName.endsWith('.bmp')
+    || lowerName.endsWith('.svg')
+  )
+}
+
+function openImageModal(attachment: ChatAttachment) {
+  modalImageUrl.value = resolveAttachmentUrl(attachment.url)
+  modalImageName.value = attachment.original_name
+  imageZoom.value = 1
+  isImageModalOpen.value = true
+}
+
+function closeImageModal() {
+  isImageModalOpen.value = false
+}
+
+function zoomIn() {
+  imageZoom.value = Math.min(4, imageZoom.value + 0.25)
+}
+
+function zoomOut() {
+  imageZoom.value = Math.max(0.25, imageZoom.value - 0.25)
+}
+
+function resetZoom() {
+  imageZoom.value = 1
+}
+
+function onImageWheel(event: WheelEvent) {
+  if (event.deltaY < 0) {
+    zoomIn()
+  } else {
+    zoomOut()
+  }
+}
+
+function resolveAttachmentUrl(url: string): string {
+  if (/^https?:\/\//.test(url)) return url
+
+  if (url.startsWith('/')) {
+    return `${apiOrigin}${url}`
+  }
+
+  // Keep compatibility for relative URLs, though backend now returns absolute path.
+  return `${apiBaseUrl || apiOrigin}/${url}`
+}
+
+function onEscapeKey(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isImageModalOpen.value) {
+    closeImageModal()
+  }
 }
 
 function formatLastSeen(lastSeen: string | null): string {
@@ -249,4 +499,9 @@ function scrollToBottom() {
 
 watch(() => props.messages.length, scrollToBottom)
 watch(() => props.chat?.id, scrollToBottom)
+
+window.addEventListener('keydown', onEscapeKey)
+onUnmounted(() => {
+  window.removeEventListener('keydown', onEscapeKey)
+})
 </script>

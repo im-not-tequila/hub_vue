@@ -124,7 +124,7 @@
                     v-else-if="item.path"
                     :to="item.path"
                     :class="[
-                    'menu-item group',
+                    'menu-item group relative',
                     {
                       'menu-item-active': isActive(item.path),
                       'menu-item-inactive': !isActive(item.path),
@@ -137,8 +137,15 @@
                         ? 'menu-item-icon-active'
                         : 'menu-item-icon-inactive',
                     ]"
+                      class="relative"
                   >
                     <component :is="item.icon" />
+                    <span
+                        v-if="isChatItem(item) && unreadCount > 0 && !isSidebarOpen"
+                        class="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 inline-flex items-center justify-center rounded-full bg-brand-500 text-white text-[10px] font-semibold leading-none"
+                    >
+                      {{ compactUnreadCount }}
+                    </span>
                   </span>
                   <Transition name="sidebar-text">
                     <span
@@ -147,6 +154,12 @@
                         class="menu-item-text"
                     >{{ item.name }}</span>
                   </Transition>
+                  <span
+                      v-if="isChatItem(item) && unreadCount > 0 && isSidebarOpen"
+                      class="ml-auto min-w-[20px] h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-brand-500 text-white text-[11px] font-semibold leading-none"
+                  >
+                    {{ compactUnreadCount }}
+                  </span>
                 </router-link>
                 <transition
                     @enter="onEnter"
@@ -275,8 +288,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
 
 import {
   GridIcon,
@@ -295,11 +309,16 @@ import {
 } from "@/components/icons/index.js";
 import BoxCubeIcon from "../../icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar.js";
+import { useChatPresenceStore } from "@/stores/chatPresenceStore";
 
 const route = useRoute();
+const chatPresenceStore = useChatPresenceStore()
+const { unreadCount } = storeToRefs(chatPresenceStore)
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu, toggleSidebar } = useSidebar();
 const openNestedSubmenuKey = ref(null);
+const isSidebarOpen = computed(() => isExpanded.value || isHovered.value || isMobileOpen.value)
+const compactUnreadCount = computed(() => (unreadCount.value > 99 ? "99+" : String(unreadCount.value)))
 
 const menuGroups = [
   {
@@ -365,6 +384,7 @@ const menuGroups = [
 ];
 
 const isActive = (path) => route.path === path;
+const isChatItem = (item) => item.path === "/chat";
 const isRouteActiveInSubItem = (subItem) => {
   return subItem.subItems
     ? subItem.subItems.some((nestedSubItem) => isActive(nestedSubItem.path))
@@ -467,6 +487,10 @@ const endTransition = (el) => {
   el.style.transition = "";
   el.style.overflow = "";
 };
+
+onMounted(() => {
+  void chatPresenceStore.refreshUnreadCount()
+})
 </script>
 
 <style scoped>

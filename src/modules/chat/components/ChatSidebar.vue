@@ -53,7 +53,7 @@
                     {{ item.user.lastname }} {{ item.user.firstname }}
                   </span>
                   <span v-if="item.chat?.last_message" class="text-xs text-gray-400 dark:text-gray-500 truncate block">
-                    {{ item.chat.last_message.sender_id === currentUserId ? 'Вы: ' : '' }}{{ item.chat.last_message.text }}
+                    {{ item.chat.last_message.sender_id === currentUserId ? 'Вы: ' : '' }}{{ getMessagePreview(item.chat.last_message) }}
                   </span>
                 </div>
               </button>
@@ -185,7 +185,7 @@
                       : 'text-gray-400 dark:text-gray-500'
                   ]"
               >
-                {{ chat.last_message.sender_id === currentUserId ? 'Вы: ' : '' }}{{ chat.last_message.text }}
+                {{ chat.last_message.sender_id === currentUserId ? 'Вы: ' : '' }}{{ getMessagePreview(chat.last_message) }}
               </p>
               <p v-else class="text-xs text-gray-400 dark:text-gray-500">Нет сообщений</p>
               <span
@@ -208,7 +208,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { Chat, ChatUser } from '../types/chat'
+import type { Chat, ChatMessage, ChatUser } from '../types/chat'
 import ChatAvatar from './ChatAvatar.vue'
 
 interface SearchResult {
@@ -301,5 +301,18 @@ function formatTime(timestamp: string): string {
     return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
   }
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+function getMessagePreview(message: ChatMessage): string {
+  const text = (message.text ?? '').trim()
+  if (text) return text
+
+  const imagesCount = message.attachments.filter(a => a.type === 'image').length
+  const filesCount = message.attachments.length - imagesCount
+
+  if (imagesCount > 0 && filesCount > 0) return `Вложение: ${imagesCount} фото, ${filesCount} файл`
+  if (imagesCount > 0) return imagesCount === 1 ? 'Фото' : `${imagesCount} фото`
+  if (filesCount > 0) return filesCount === 1 ? 'Файл' : `${filesCount} файла`
+  return 'Сообщение'
 }
 </script>
