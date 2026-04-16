@@ -79,11 +79,17 @@
           >
             <!-- Аватар -->
             <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
+              <HubUserAisAvatar
+                v-if="notification.sender_user_id"
+                :user-id="notification.sender_user_id"
+                alt="User"
+                class="h-full w-full overflow-hidden rounded-full object-cover"
+              />
               <img
-                  :src="getAvatar(notification.sender_user_id)"
-                  alt="User"
-                  class="overflow-hidden rounded-full"
-                  @error="onAvatarError"
+                v-else
+                :src="systemAvatar"
+                alt="User"
+                class="overflow-hidden rounded-full"
               />
             </span>
 
@@ -162,15 +168,13 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import systemAvatar from '@/assets/system.png'
-import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 import {useNotificationsStore} from "@/stores/notificationsStore";
 import router from "@/router";
 import {NotificationResponse} from "@/components/layout/header/notifications/types/notifications";
 import {notificationsMarkAsRead} from "@/components/layout/header/notifications/api/notifications.api";
-
+import HubUserAisAvatar from '@/components/common/HubUserAisAvatar.vue'
 
 const notificationsStore = useNotificationsStore()
-const apiUrl = import.meta.env.VITE_API_URL
 const dropdownOpen = ref(false)
 const notifying = computed(() => notificationsStore.notifications.length !== 0)
 const dropdownRef = ref(null)
@@ -218,15 +222,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
-
-function getAvatar(user_id: number | null): string {
-  if (!user_id) return systemAvatar
-  return apiUrl + "/user/" + user_id.toString() + "/avatar"
-}
-
-function onAvatarError(event) {
-  event.target.src = noUserpicUrl
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);

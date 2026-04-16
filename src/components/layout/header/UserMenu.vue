@@ -5,7 +5,7 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img v-if="avatarSrc" :src="avatarSrc" alt="User" @error="onAvatarError"/>
+        <img v-if="avatarSrc" :src="avatarSrc" alt="User" @error="onUserAvatarImgError"/>
       </span>
 
       <span v-if="user" class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
@@ -73,8 +73,8 @@ import {RouterLink} from 'vue-router'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from "@/stores/userStore.js";
 import { User } from "@/types/user.js";
-import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 import {useRouter} from "vue-router";
+import { onUserAvatarImgError, useUserAvatarUrl } from '@/utils/userAvatar'
 
 
 const props = defineProps<{
@@ -87,7 +87,7 @@ const user = computed(() => props.user ?? userStore.user ?? null)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-const avatarSrc = `${import.meta.env.VITE_API_URL}/user/${user.value?.id}/avatar`
+const avatarSrc = useUserAvatarUrl(() => user.value?.id ?? null)
 const router = useRouter()
 
 
@@ -125,9 +125,5 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
-
-function onAvatarError(event) {
-  event.target.src = noUserpicUrl
-}
 
 </script>

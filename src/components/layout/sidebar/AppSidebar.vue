@@ -4,9 +4,9 @@
       'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen overflow-x-hidden z-50 border-r border-gray-200',
       'transition-[width,transform] duration-300 ease-in-out',
       {
-        'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
+        'lg:w-[320px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
-        'translate-x-0 w-[290px]': isMobileOpen,
+        'translate-x-0 w-[320px]': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },
@@ -83,8 +83,8 @@
                     :class="[
                     'menu-item group w-full',
                     {
-                      'menu-item-active': isSubmenuOpen(groupIndex, index),
-                      'menu-item-inactive': !isSubmenuOpen(groupIndex, index),
+                      'menu-item-active': isSubmenuRouteActive(groupIndex, index),
+                      'menu-item-inactive': !isSubmenuRouteActive(groupIndex, index),
                     },
                     !isExpanded && !isHovered
                       ? 'lg:justify-center'
@@ -93,7 +93,7 @@
                 >
                   <span
                       :class="[
-                      isSubmenuOpen(groupIndex, index)
+                      isSubmenuRouteActive(groupIndex, index)
                         ? 'menu-item-icon-active'
                         : 'menu-item-icon-inactive',
                     ]"
@@ -149,9 +149,10 @@
                   </Transition>
                 </router-link>
                 <transition
-                    @enter="startTransition"
+                    @enter="onEnter"
                     @after-enter="endTransition"
-                    @before-leave="startTransition"
+                    @before-leave="onBeforeLeave"
+                    @leave="onLeave"
                     @after-leave="endTransition"
                 >
                   <div
@@ -160,9 +161,57 @@
                       (isExpanded || isHovered || isMobileOpen)
                     "
                   >
-                    <ul class="mt-2 space-y-1 ml-9">
-                      <li v-for="subItem in item.subItems" :key="subItem.name">
+                    <ul class="mt-1 space-y-0.5 ml-9">
+                      <li v-for="(subItem, subIndex) in item.subItems" :key="subItem.name">
+                        <template v-if="subItem.subItems">
+                          <button
+                              type="button"
+                              class="menu-dropdown-item w-full pt-1 pb-1"
+                              :class="isNestedSubmenuRouteActive(subItem)
+                                ? 'menu-dropdown-item-active'
+                                : 'menu-dropdown-item-inactive'"
+                              @click="toggleNestedSubmenu(groupIndex, index, subIndex)"
+                          >
+                            {{ subItem.name }}
+                            <ChevronDownIcon
+                                class="ml-auto w-4 h-4 transition-transform duration-200"
+                                :class="{ 'rotate-180 text-brand-500': isNestedSubmenuOpen(groupIndex, index, subIndex, subItem) }"
+                            />
+                          </button>
+                          <transition
+                              @enter="onEnter"
+                              @after-enter="endTransition"
+                              @before-leave="onBeforeLeave"
+                              @leave="onLeave"
+                              @after-leave="endTransition"
+                          >
+                            <ul
+                                v-show="isNestedSubmenuOpen(groupIndex, index, subIndex, subItem)"
+                                class="mt-0.5 ml-4 space-y-0.5"
+                            >
+                              <li v-for="nestedSubItem in subItem.subItems" :key="nestedSubItem.name">
+                                <router-link
+                                    :to="nestedSubItem.path"
+                                    :class="[
+                                    'menu-dropdown-item pt-1 pb-1',
+                                    {
+                                      'menu-dropdown-item-active': isActive(
+                                        nestedSubItem.path
+                                      ),
+                                      'menu-dropdown-item-inactive': !isActive(
+                                        nestedSubItem.path
+                                      ),
+                                    },
+                                  ]"
+                                >
+                                  {{ nestedSubItem.name }}
+                                </router-link>
+                              </li>
+                            </ul>
+                          </transition>
+                        </template>
                         <router-link
+                            v-else
                             :to="subItem.path"
                             :class="[
                             'menu-dropdown-item',
@@ -226,7 +275,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import {
@@ -249,7 +298,8 @@ import { useSidebar } from "@/composables/useSidebar.js";
 
 const route = useRoute();
 
-const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const { isExpanded, isMobileOpen, isHovered, openSubmenu, toggleSidebar } = useSidebar();
+const openNestedSubmenuKey = ref(null);
 
 const menuGroups = [
   {
@@ -259,6 +309,26 @@ const menuGroups = [
         icon: DocsIcon,
         name: "Документы",
         path: "/docs",
+      },
+      {
+        icon: UserCircleIcon,
+        name: "Мониторинг персонала",
+        subItems: [
+          {
+            name: "Сотрудники",
+            subItems: [
+              { name: "Все сотрудники", path: "/monitoring/staff/all" },
+              { name: "Пунктуальность", path: "/monitoring/staff/punctuality" },
+            ],
+          },
+          {
+            name: "ППС",
+            subItems: [
+              { name: "Все ППС", path: "/monitoring/academic/all" },
+              { name: "Пунктуальность", path: "/monitoring/academic/punctuality" },
+            ],
+          },
+        ],
       },
       {
         icon: CalenderIcon,
@@ -295,42 +365,107 @@ const menuGroups = [
 ];
 
 const isActive = (path) => route.path === path;
+const isRouteActiveInSubItem = (subItem) => {
+  return subItem.subItems
+    ? subItem.subItems.some((nestedSubItem) => isActive(nestedSubItem.path))
+    : isActive(subItem.path);
+};
+
+const isRouteActiveInItem = (item) => {
+  return Boolean(item.subItems?.some((subItem) => isRouteActiveInSubItem(subItem)));
+};
 
 const toggleSubmenu = (groupIndex, itemIndex) => {
+  if (!isExpanded.value && !isMobileOpen.value && !isHovered.value) {
+    toggleSidebar();
+  }
   const key = `${groupIndex}-${itemIndex}`;
-  openSubmenu.value = openSubmenu.value === key ? null : key;
+  const willOpen = openSubmenu.value !== key;
+  openSubmenu.value = willOpen ? key : null;
+  if (!willOpen) {
+    openNestedSubmenuKey.value = null;
+  }
+};
+
+const toggleNestedSubmenu = (groupIndex, itemIndex, subIndex) => {
+  const key = `${groupIndex}-${itemIndex}-${subIndex}`;
+  openNestedSubmenuKey.value = openNestedSubmenuKey.value === key ? null : key;
+};
+
+const isNestedSubmenuOpen = (groupIndex, itemIndex, subIndex, subItem) => {
+  const key = `${groupIndex}-${itemIndex}-${subIndex}`;
+  const hasActiveChild = subItem.subItems?.some((nestedSubItem) => isActive(nestedSubItem.path));
+  return openNestedSubmenuKey.value === key || Boolean(hasActiveChild);
 };
 
 const isAnySubmenuRouteActive = computed(() => {
   return menuGroups.some((group) =>
     group.items.some(
       (item) =>
-        item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
+        item.subItems &&
+        item.subItems.some((subItem) => isRouteActiveInSubItem(subItem))
     )
   );
 });
+
+const isSubmenuRouteActive = (groupIndex, itemIndex) => {
+  return isRouteActiveInItem(menuGroups[groupIndex].items[itemIndex]);
+};
+
+const isNestedSubmenuRouteActive = (subItem) => {
+  return Boolean(subItem.subItems?.some((nestedSubItem) => isActive(nestedSubItem.path)));
+};
 
 const isSubmenuOpen = (groupIndex, itemIndex) => {
   const key = `${groupIndex}-${itemIndex}`;
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
-        isActive(subItem.path)
-      ))
+      isRouteActiveInItem(menuGroups[groupIndex].items[itemIndex]))
   );
 };
 
-const startTransition = (el) => {
-  el.style.height = "auto";
+watch(
+  () => route.path,
+  () => {
+    if (!openSubmenu.value) return;
+
+    const [groupIndexRaw, itemIndexRaw] = openSubmenu.value.split("-");
+    const groupIndex = Number(groupIndexRaw);
+    const itemIndex = Number(itemIndexRaw);
+    const openedItem = menuGroups[groupIndex]?.items?.[itemIndex];
+
+    if (!openedItem?.subItems || !isRouteActiveInItem(openedItem)) {
+      openSubmenu.value = null;
+      openNestedSubmenuKey.value = null;
+    }
+  }
+);
+
+const onEnter = (el) => {
   const height = el.scrollHeight;
+  el.style.overflow = "hidden";
+  el.style.transition = "height 220ms ease";
   el.style.height = "0px";
   el.offsetHeight; // force reflow
   el.style.height = height + "px";
 };
 
+const onBeforeLeave = (el) => {
+  el.style.overflow = "hidden";
+  el.style.transition = "height 220ms ease";
+  el.style.height = el.scrollHeight + "px";
+};
+
+const onLeave = (el) => {
+  el.offsetHeight; // force reflow
+  el.style.height = "0px";
+};
+
 const endTransition = (el) => {
   el.style.height = "";
+  el.style.transition = "";
+  el.style.overflow = "";
 };
 </script>
 

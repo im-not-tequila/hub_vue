@@ -32,7 +32,7 @@
           Перетащите файл сюда
         </h4>
         <span
-            class="mx-auto mb-5 block w-full max-w-[290px] text-sm text-gray-700 dark:text-gray-400"
+            class="mx-auto mb-5 block w-full max-w-[320px] text-sm text-gray-700 dark:text-gray-400"
         >
           {{ placeholder }}
         </span>

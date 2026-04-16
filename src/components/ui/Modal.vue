@@ -38,7 +38,7 @@
       >
         <div
             :class="[
-                'rounded-2xl border flex flex-col bg-white dark:bg-gray-900',
+                'rounded-2xl border flex min-h-0 flex-col bg-white dark:bg-gray-900',
                 'border-gray-200  dark:border-gray-800 ',
 
                 className,
@@ -72,7 +72,7 @@
           </div>
 
           <!-- Контент (прокручиваемая часть) -->
-          <div class="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
+          <div class="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 min-h-0 custom-scrollbar bg-white dark:bg-gray-900">
             <transition
                 mode="out-in"
                 enter-active-class="transition duration-300 ease-out"

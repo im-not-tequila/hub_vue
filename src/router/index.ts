@@ -24,6 +24,18 @@ const routes = [
                 meta: { requiresAuth: true, title: 'Документы' },
             },
             {
+                path: 'monitoring',
+                name: 'monitoring',
+                redirect: '/monitoring/staff/all',
+                meta: { requiresAuth: true, title: 'Мониторинг персонала' },
+            },
+            {
+                path: 'monitoring/:group(staff|academic)/:tab(all|punctuality)',
+                name: 'monitoring_section',
+                component: () => import('@/modules/monitoring/views/MonitoringView.vue'),
+                meta: { requiresAuth: true, title: 'Мониторинг персонала' },
+            },
+            {
                 path: 'visit-history',
                 name: 'visit_history',
                 component: () => import('@/modules/visit-history/views/VisitHistoryView.vue'),

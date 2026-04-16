@@ -2,7 +2,7 @@
 
 <template>
   <div>
-    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+    <label v-if="label" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
       {{ label }}
     </label>
     <div class="relative">
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, reactive, defineProps, defineEmits, watch} from 'vue'
+import { ref, watch } from 'vue'
 import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import { Russian } from 'flatpickr/dist/l10n/ru.js'
@@ -44,7 +44,7 @@ import { Russian } from 'flatpickr/dist/l10n/ru.js'
 
 const props = defineProps<{
   modelValue: string | Date | null
-  label: string
+  label?: string
 }>()
 
 const emit = defineEmits<{

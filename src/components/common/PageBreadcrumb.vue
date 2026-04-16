@@ -14,49 +14,51 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <Transition name="breadcrumb-fade" mode="out-in">
               <h2
-                :key="pageTitle"
+                :key="resolvedPageTitle"
                 class="text-xl font-semibold text-gray-800 dark:text-white/90"
               >
-                {{ pageTitle }}
+                {{ resolvedPageTitle }}
               </h2>
             </Transition>
             <nav class="transition-[width,margin] duration-200 ease-out">
               <ol class="flex items-center gap-1.5 transition-[width] duration-200 ease-out">
-                <li>
-                  <router-link
-                    class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
-                    to="/"
+                <li
+                  v-for="(crumb, index) in breadcrumbItems"
+                  :key="`${crumb.label}-${index}`"
+                  class="relative flex items-center gap-1.5 transition-[width] duration-200 ease-out"
+                >
+                  <svg
+                    v-if="index > 0"
+                    class="shrink-0 stroke-current text-gray-500 dark:text-gray-400"
+                    width="17"
+                    height="16"
+                    viewBox="0 0 17 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    Главная страница
+                    <path
+                      d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
+                      stroke="currentColor"
+                      stroke-width="1.2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <router-link
+                    v-if="crumb.to && index !== breadcrumbItems.length - 1"
+                    class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
+                    :to="crumb.to"
+                  >
+                    {{ crumb.label }}
                   </router-link>
+                  <span v-else class="inline-block">
+                    <Transition name="breadcrumb-slide" mode="out-in">
+                      <span :key="resolvedPageTitle" class="text-sm text-gray-800 dark:text-white/90 inline-block">
+                        {{ crumb.label }}
+                      </span>
+                    </Transition>
+                  </span>
                 </li>
-                <template v-if="!isHomeTitle">
-                  <li class="relative flex items-center gap-1.5 transition-[width] duration-200 ease-out">
-                    <svg
-                      class="shrink-0 stroke-current text-gray-500 dark:text-gray-400"
-                      width="17"
-                      height="16"
-                      viewBox="0 0 17 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
-                        stroke="currentColor"
-                        stroke-width="1.2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    <span class="inline-block">
-                      <Transition name="breadcrumb-slide" mode="out-in">
-                        <span :key="pageTitle" class="text-sm text-gray-800 dark:text-white/90 inline-block">
-                          {{ pageTitle }}
-                        </span>
-                      </Transition>
-                    </span>
-                  </li>
-                </template>
               </ol>
             </nav>
           </div>
@@ -88,15 +90,67 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 interface BreadcrumbProps {
   pageTitle: string
 }
 
 const props = defineProps<BreadcrumbProps>()
+const route = useRoute()
 
 const collapsed = ref(false)
-const isHomeTitle = computed(() => props.pageTitle.trim().toLowerCase() === 'главная страница')
+
+type BreadcrumbItem = {
+  label: string
+  to?: string
+}
+
+const monitoringGroupLabel = computed(() => {
+  return route.params.group === 'academic' ? 'ППС' : route.params.group === 'staff' ? 'Сотрудники' : null
+})
+
+const monitoringTabLabel = computed(() => {
+  if (route.params.tab === 'punctuality') {
+    return 'Пунктуальность'
+  }
+  if (route.params.tab === 'all') {
+    return route.params.group === 'academic' ? 'Все ППС' : 'Все сотрудники'
+  }
+  return null
+})
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+  const items: BreadcrumbItem[] = [{ label: 'Главная страница', to: '/' }]
+
+  if (route.path.startsWith('/monitoring')) {
+    items.push({ label: 'Мониторинг персонала', to: '/monitoring/staff/all' })
+
+    if (monitoringGroupLabel.value) {
+      const groupPath = route.params.group === 'academic' ? '/monitoring/academic/all' : '/monitoring/staff/all'
+      items.push({ label: monitoringGroupLabel.value, to: groupPath })
+    }
+
+    if (monitoringTabLabel.value) {
+      items.push({ label: monitoringTabLabel.value })
+    }
+
+    return items
+  }
+
+  const fallbackTitle = props.pageTitle.trim() || 'Главная страница'
+  if (fallbackTitle.toLowerCase() !== 'главная страница') {
+    items.push({ label: fallbackTitle })
+  }
+
+  return items
+})
+
+const resolvedPageTitle = computed(() => {
+  const lastItem = breadcrumbItems.value[breadcrumbItems.value.length - 1]
+  return lastItem?.label ?? 'Главная страница'
+})
+
 </script>
 
 <style scoped>

@@ -14,7 +14,7 @@ import {
 
 
 export const allTutorsWithPosition = (lang: 'ru' | 'kz' | 'en' = 'ru') =>
-    httpClient.get<AllTutorsWithPositionResponse>('/user/all_tutors_with_position', {
+    httpClient.get<AllTutorsWithPositionResponse>('/user/all_employees_with_position', {
         params: { lang },
     })
 

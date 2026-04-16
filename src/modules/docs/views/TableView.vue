@@ -140,7 +140,11 @@
                 <td class="px-2 py-2 align-middle sm:px-2 sm:py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 flex-shrink-0">
-                      <img :src="`${apiUrl}/user/${doc.sender.id}/avatar`" :alt="doc.sender.shortname" @error="onAvatarError"/>
+                      <HubUserAisAvatar
+                        :user-id="doc.sender.id"
+                        :alt="doc.sender.shortname"
+                        class="h-full w-full object-cover"
+                      />
                     </div>
                     <div>
                         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem] sm:max-w-[10rem]">
@@ -159,7 +163,11 @@
                         class="w-8 h-8 overflow-hidden rounded-full sm:w-10 sm:h-10 border-2 flex-shrink-0"
                         :class="avatarBorder(colorByStatus(undefined, doc.recipient.status))"
                     >
-                      <img :src="`${apiUrl}/user/${doc.recipient.id}/avatar`" :alt="doc.recipient.shortname" @error="onAvatarError"/>
+                      <HubUserAisAvatar
+                        :user-id="doc.recipient.id"
+                        :alt="doc.recipient.shortname"
+                        class="h-full w-full object-cover"
+                      />
                     </div>
                     <div>
                         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate max-w-[8rem]">
@@ -181,7 +189,11 @@
                         :class="[avatarBorder(colorByStatus(undefined, member.status)), idx >= 5 ? '-mt-2' : '']"
                         :title="`${member.shortname} • ${member.role}`"
                     >
-                      <img :src="`${apiUrl}/user/${member.id}/avatar`" :alt="member.shortname" @error="onAvatarError"/>
+                      <HubUserAisAvatar
+                        :user-id="member.id"
+                        :alt="member.shortname"
+                        class="h-full w-full object-cover"
+                      />
                     </div>
                   </div>
                 </td>
@@ -286,18 +298,17 @@
 </template>
 
 <script setup lang="ts">
-import {defineProps, defineEmits, toRef, ref, computed } from 'vue'
+import { toRef, ref, computed } from 'vue'
 import {DocumentStatus, Person} from "@/modules/docs/types/doc";
 import { DocumentResponse } from "@/modules/docs/types/response";
 import {useUserStore} from "@/stores/userStore";
-import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 import EyeIcon from '@/components/icons/EyeIcon.vue';
 import DownloadIcon from '@/components/icons/DownloadIcon.vue';
 import EyeCloseIcon from "@/components/icons/EyeCloseIcon.vue";
 import TrashIcon from "@/components/icons/TrashIcon.vue";
 import SmallChevronUpIcon from "@/components/icons/SmallChevronUpIcon.vue";
 import SmallChevronDownIcon from "@/components/icons/SmallChevronDownIcon.vue";
-
+import HubUserAisAvatar from '@/components/common/HubUserAisAvatar.vue'
 
 type SortKey = 'id' | 'name' | 'sender' | 'recipient' | 'approvers' | 'create_datetime' | 'status'
 
@@ -317,7 +328,6 @@ const emit = defineEmits<{
   (e: 'unhide', id: number): void
 }>()
 
-const apiUrl = import.meta.env.VITE_API_URL
 const userStore = useUserStore()
 const docs = toRef(props, 'docs')
 const sortKey = ref<SortKey>('create_datetime')
@@ -478,11 +488,6 @@ function compare(a: DocumentResponse, b: DocumentResponse): number {
       break
   }
   return sortAsc.value ? res : -res
-}
-
-function onAvatarError(event: Event) {
-  const target = event.target as HTMLImageElement
-  target.src = noUserpicUrl
 }
 
 </script>

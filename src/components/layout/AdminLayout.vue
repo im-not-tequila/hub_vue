@@ -5,13 +5,13 @@
     <div
       class="flex-1 transition-all duration-300 ease-in-out max-w-full "
       :class="[
-          (sidebar && header) ? (isExpanded || isHovered)  ? 'lg:ml-[290px]' : 'lg:ml-[90px]' : ''
+          (sidebar && header) ? (isExpanded || isHovered)  ? 'lg:ml-[320px]' : 'lg:ml-[90px]' : ''
           ]"
     >
       <app-header v-if="header" v-model:search="search" />
       <div :class="[
           'p-4 pt-0 mx-auto md:p-6 md:pt-0 transition-[max-width,margin] duration-300 ease-in-out',
-          (isExpanded || isHovered) ? 'lg:max-w-[calc(100vw-290px)]' : 'lg:max-w-[calc(100vw-90px)]'
+          (isExpanded || isHovered) ? 'lg:max-w-[calc(100vw-320px)]' : 'lg:max-w-[calc(100vw-90px)]'
           ]">
         <slot :search="search"></slot>
       </div>

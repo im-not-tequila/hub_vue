@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useUserAvatarUrl } from '@/utils/userAvatar'
 
 const props = withDefaults(defineProps<{
   userId: number
@@ -45,9 +46,7 @@ const imgFailed = ref(false)
 
 watch(() => props.userId, () => { imgFailed.value = false })
 
-const avatarUrl = computed(() =>
-    `${import.meta.env.VITE_API_URL}/user/${props.userId}/avatar`
-)
+const avatarUrl = useUserAvatarUrl(() => props.userId)
 
 const initials = computed(() =>
     (props.lastname[0] + props.firstname[0]).toUpperCase()

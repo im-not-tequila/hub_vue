@@ -6,7 +6,7 @@
           <img
               :src="avatarSrc"
               alt="User Avatar"
-              @error="onAvatarError"
+              @error="onUserAvatarImgError"
               class="rounded-lg object-cover"
               width="256"
               height="256"
@@ -62,25 +62,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import BaseInput from "@/components/ui/BaseInput.vue";
-import noUserpicUrl from "@/assets/images/user/no_userpic.jpg";
 import { useUserStore } from "@/stores/userStore";
+import { onUserAvatarImgError, useUserAvatarUrl } from '@/utils/userAvatar'
 
 const userStore = useUserStore()
 
-const avatarSrc = computed(() => {
-  const userId = userStore.user?.id
-  if (userId) {
-    return `${import.meta.env.VITE_API_URL}/user/${userId}/avatar`
-  }
-
-  return noUserpicUrl
-})
-
-function onAvatarError(event: Event) {
-  const target = event.target as HTMLImageElement
-  target.src = noUserpicUrl
-}
+const avatarSrc = useUserAvatarUrl(() => userStore.user?.id ?? null)
 </script>
