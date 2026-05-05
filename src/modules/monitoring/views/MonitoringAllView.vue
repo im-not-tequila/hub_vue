@@ -1,10 +1,21 @@
 <template>
   <div class="h-full flex flex-col">
-    <TutorDetailsModal v-model="modalOpen" :staff="selectedStaff" @close="selectedStaff = null" />
+    <TutorDetailsModal
+      v-if="activeGroup === 'staff'"
+      v-model="modalOpen"
+      :staff="selectedStaff"
+      @close="selectedStaff = null"
+    />
+    <AcademicDetailsModal
+      v-else
+      v-model="academicModalOpen"
+      :academic="selectedAcademic"
+      @close="selectedAcademic = null"
+    />
 
     <div class="flex-1 min-h-0 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden flex relative">
       <aside
-        v-if="activeGroup === 'staff'"
+        v-if="activeGroup === 'staff' || activeGroup === 'academic'"
         class="py-6 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] flex flex-col gap-4 transition-all duration-300 ease-out will-change-transform"
         :class="filtersCollapsed ? 'w-0 -translate-x-full overflow-hidden p-0 border-r-0' : 'w-70 translate-x-0 p-4'"
       >
@@ -35,18 +46,28 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Отдел</label>
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ activeGroup === 'staff' ? 'Отдел' : 'Кафедра' }}
+          </label>
           <SelectInput
+            v-if="activeGroup === 'staff'"
             v-model="structuralSubdivisionFilter"
             :options="structuralSubdivisionOptions"
             placeholder="Фильтр по отделу"
+            :is_search="false"
+          />
+          <SelectInput
+            v-else
+            v-model="cafedraFilter"
+            :options="cafedraOptions"
+            placeholder="Фильтр по кафедре"
             :is_search="false"
           />
         </div>
       </aside>
 
       <button
-        v-if="activeGroup === 'staff' && filtersCollapsed"
+        v-if="(activeGroup === 'staff' || activeGroup === 'academic') && filtersCollapsed"
         type="button"
         class="absolute left-0 top-0 z-10 rounded-r-lg border-r border-b border-gray-200 bg-white px-1 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-all"
         aria-label="Показать фильтры"
@@ -80,7 +101,6 @@
               </BaseButton>
 
               <BaseButton
-                v-if="activeGroup === 'staff'"
                 type="button"
                 variant="outlineGreen"
                 size="sm"
@@ -105,6 +125,11 @@
                 :staff="filteredStaff"
                 @select="openStaff"
               />
+              <AcademicTable
+                v-else-if="activeGroup === 'academic' && filteredAcademic.length"
+                :academic="filteredAcademic"
+                @select="openAcademic"
+              />
 
               <div v-else class="flex items-center justify-center h-full">
                 <div class="mx-auto w-full max-w-[630px] text-center">
@@ -127,19 +152,31 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import Loader from '@/components/layout/Loader.vue'
-import SelectInput from '@/components/ui/SelectInput.vue'
+import SelectInput, { type SelectOption } from '@/components/ui/SelectInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { DownloadIcon, SettingsIcon } from '@/components/icons'
 import TutorsTable from '@/modules/monitoring/components/StaffTable.vue'
+import AcademicTable from '@/modules/monitoring/components/AcademicTable.vue'
 import TutorDetailsModal from '@/modules/monitoring/components/StaffDetailsModal.vue'
+import AcademicDetailsModal from '@/modules/monitoring/components/AcademicDetailsModal.vue'
 import {
   exportActiveStaffExcel,
+  getEmployeeAcademic,
+  listActiveAcademic,
   listActiveStaff,
+  listUsedCafedras,
 } from '@/modules/monitoring/api/monitoring.api'
 import type {
+  StaffAcademicDetailItem,
+  StaffAcademicListItem,
   StaffListItem,
 } from '@/modules/monitoring/types/staff'
-import { staffFullName } from '@/modules/monitoring/types/staff'
+import {
+  academicCafedraDisplay,
+  academicPositionDisplay,
+  academicTotalRate,
+  staffFullName,
+} from '@/modules/monitoring/types/staff'
 import { useMonitoringShared } from '@/modules/monitoring/composables/useMonitoringShared'
 import { downloadExcelResponse } from '@/modules/monitoring/utils/download'
 
@@ -158,7 +195,12 @@ const {
 
 const isLoading = ref(false)
 const staff = ref<StaffListItem[]>([])
+const academic = ref<StaffAcademicListItem[]>([])
+const selectedAcademic = ref<StaffAcademicDetailItem | null>(null)
+const academicModalOpen = ref(false)
 const structuralSubdivisionFilter = ref<number | 'ALL'>('ALL')
+const cafedraFilter = ref<number | 'ALL'>('ALL')
+const cafedraOptions = ref<SelectOption[]>([{ value: 'ALL', label: 'Все кафедры' }])
 const isExportLoading = ref(false)
 
 const filteredStaff = computed(() => {
@@ -178,34 +220,45 @@ const filteredStaff = computed(() => {
   })
 })
 
-const pageTitle = computed(() => {
-  if (activeGroup.value === 'academic') {
-    return 'ППС / Все ППС'
+const filteredAcademic = computed(() => {
+  const q = (props.search ?? '').trim().toLowerCase()
+  const byCafedra =
+    cafedraFilter.value === 'ALL'
+      ? academic.value
+      : academic.value.filter((item) => item.positions.some((position) => position.cafedra_id === cafedraFilter.value))
+  if (!q) {
+    return byCafedra
   }
+  return byCafedra.filter((item) => {
+    const name = staffFullName(item).toLowerCase()
+    const cafedra = academicCafedraDisplay(item).toLowerCase()
+    const position = academicPositionDisplay(item).toLowerCase()
+    const totalRate = String(academicTotalRate(item) ?? '').toLowerCase()
+    return name.includes(q) || cafedra.includes(q) || position.includes(q) || totalRate.includes(q)
+  })
+})
+
+const pageTitle = computed(() => {
   return 'Количество сотрудников:'
 })
 
 const emptyTitle = computed(() => {
-  if (activeGroup.value === 'academic') {
-    return 'Раздел ППС в разработке'
-  }
-  return 'Сотрудники не найдены'
+  return activeGroup.value === 'academic' ? 'ППС не найдены' : 'Сотрудники не найдены'
 })
 
 const emptyDescription = computed(() => {
-  if (activeGroup.value === 'academic') {
-    return 'Заглушка для списка ППС. Данные появятся после реализации.'
-  }
   return 'Попробуйте изменить строку поиска или обновить список.'
 })
 
 const activeCount = computed(() => {
-  return activeGroup.value === 'staff' ? filteredStaff.value.length : 0
+  return activeGroup.value === 'staff' ? filteredStaff.value.length : filteredAcademic.value.length
 })
 
 onMounted(async () => {
   if (activeGroup.value === 'staff') {
     void loadStructuralSubdivisions()
+  } else {
+    void loadCafedras()
   }
   await ensureDataLoadedForRoute()
 })
@@ -218,28 +271,33 @@ watch(
     }
     if (nextGroup === 'staff') {
       void loadStructuralSubdivisions()
+    } else {
+      void loadCafedras()
     }
     await ensureDataLoadedForRoute()
   }
 )
 
 async function ensureDataLoadedForRoute() {
-  if (activeGroup.value !== 'staff') {
+  if (activeGroup.value === 'staff' && !staff.value.length) {
+    await refresh()
     return
   }
-  if (!staff.value.length) {
+  if (activeGroup.value === 'academic' && !academic.value.length) {
     await refresh()
   }
 }
 
 async function refresh() {
-  if (activeGroup.value !== 'staff') {
-    return
-  }
   isLoading.value = true
   try {
-    const { data } = await listActiveStaff()
-    staff.value = data
+    if (activeGroup.value === 'staff') {
+      const { data } = await listActiveStaff()
+      staff.value = data
+      return
+    }
+    const { data } = await listActiveAcademic(resolveMonitoringLang())
+    academic.value = data
   } finally {
     isLoading.value = false
   }
@@ -247,6 +305,17 @@ async function refresh() {
 
 function openStaff(staffMember: StaffListItem) {
   void openStaffDetails(staffMember.platonus_id)
+}
+
+async function openAcademic(staffMember: StaffAcademicListItem) {
+  academicModalOpen.value = true
+  selectedAcademic.value = null
+  try {
+    const { data } = await getEmployeeAcademic(staffMember.platonus_id, resolveMonitoringLang())
+    selectedAcademic.value = data ?? null
+  } catch {
+    selectedAcademic.value = null
+  }
 }
 
 async function downloadStaffExcel() {
@@ -266,6 +335,34 @@ async function downloadStaffExcel() {
     downloadExcelResponse(response, 'monitoring_staff.xls')
   } finally {
     isExportLoading.value = false
+  }
+}
+
+function resolveMonitoringLang(): 'ru' | 'kz' | 'en' {
+  const htmlLang = (document.documentElement.lang || '').toLowerCase()
+  if (htmlLang === 'ru' || htmlLang === 'kz' || htmlLang === 'en') {
+    return htmlLang
+  }
+  const localStorageLang = (window.localStorage.getItem('lang') || '').toLowerCase()
+  if (localStorageLang === 'ru' || localStorageLang === 'kz' || localStorageLang === 'en') {
+    return localStorageLang
+  }
+  return 'ru'
+}
+
+async function loadCafedras() {
+  try {
+    const { data } = await listUsedCafedras(resolveMonitoringLang())
+    const options: SelectOption[] = [{ value: 'ALL', label: 'Все кафедры' }]
+    for (const cafedra of data ?? []) {
+      options.push({
+        value: cafedra.id,
+        label: cafedra.name?.trim() || `ID ${cafedra.id}`,
+      })
+    }
+    cafedraOptions.value = options
+  } catch {
+    cafedraOptions.value = [{ value: 'ALL', label: 'Все кафедры' }]
   }
 }
 </script>

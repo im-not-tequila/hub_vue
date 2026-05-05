@@ -8,7 +8,7 @@ export interface Subdivision {
 }
 
 export const getSubordinates = (subdivisionId: number) =>
-    httpClient.get<Subdivision[]>(`/structural-subdivisions/${subdivisionId}/subordinates`)
+    httpClient.get<Subdivision[]>(`/structure/subdivision/${subdivisionId}/subordinates`)
 
 export const workTabel = (subdivisionId: number, year: number, month: number) =>
     httpClient.get<Tabel[]>(`/work-tabel`, {

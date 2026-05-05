@@ -166,10 +166,14 @@
             </div>
 
             <template v-else>
-              <PunctualityTable
+              <PunctualityTableStaff
                 v-if="activeGroup === 'staff' && punctualityMode === 'day' && filteredFirstIn.length"
                 :rows="filteredFirstIn"
                 @select="openStaffDetails"
+              />
+              <PunctualityTableAcademic
+                v-else-if="activeGroup === 'academic' && punctualityMode === 'day' && filteredAcademicFirstIn.length"
+                :rows="filteredAcademicFirstIn"
               />
               <PunctualityPeriodTable
                 v-else-if="activeGroup === 'staff' && punctualityMode === 'period' && filteredPeriodStats.length"
@@ -204,21 +208,24 @@ import type { SelectOption } from '@/components/ui/SelectInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { DownloadIcon, SettingsIcon } from '@/components/icons'
 import TutorDetailsModal from '@/modules/monitoring/components/StaffDetailsModal.vue'
-import PunctualityTable from '@/modules/monitoring/components/PunctualityTable.vue'
+import PunctualityTableAcademic from '@/modules/monitoring/components/PunctualityTableAcademic.vue'
+import PunctualityTableStaff from '@/modules/monitoring/components/PunctualityTableStaff.vue'
 import PunctualityPeriodTable from '@/modules/monitoring/components/PunctualityPeriodTable.vue'
 import {
   exportStaffPunctualityExcel,
+  listAcademicFirstIn,
   listActiveEmployeesPunctualityStats,
   listPercoStatuses,
   listStaffFirstIn,
 } from '@/modules/monitoring/api/monitoring.api'
 import type {
   ArrivalStatus,
+  StaffAcademicFirstInItem,
   StaffFirstInItem,
   StaffPunctualityStatsItem,
   WorkScheduleType,
 } from '@/modules/monitoring/types/staff'
-import { staffFullName } from '@/modules/monitoring/types/staff'
+import { academicCafedraDisplay, academicPositionDisplay, staffFullName } from '@/modules/monitoring/types/staff'
 import { useMonitoringShared } from '@/modules/monitoring/composables/useMonitoringShared'
 import { downloadExcelResponse } from '@/modules/monitoring/utils/download'
 
@@ -253,8 +260,10 @@ const toDateString = (value: string | Date | null | undefined): string | undefin
 
 const isLoading = ref(false)
 const firstIn = ref<StaffFirstInItem[]>([])
+const academicFirstIn = ref<StaffAcademicFirstInItem[]>([])
 const periodStats = ref<StaffPunctualityStatsItem[]>([])
 const firstInLoaded = ref(false)
+const academicFirstInLoaded = ref(false)
 const periodStatsLoaded = ref(false)
 const punctualityMode = ref<PunctualityMode>('day')
 const arrivalStatusFilter = ref<ArrivalStatus | 'ALL' | 'ABSENT'>('ALL')
@@ -314,6 +323,19 @@ const filteredFirstIn = computed(() => {
   })
 })
 
+const filteredAcademicFirstIn = computed(() => {
+  const q = (props.search ?? '').trim().toLowerCase()
+  if (!q) return academicFirstIn.value
+  return academicFirstIn.value.filter((s) => {
+    const name = staffFullName(s).toLowerCase()
+    const cafedra = academicCafedraDisplay(s).toLowerCase()
+    const position = academicPositionDisplay(s).toLowerCase()
+    const status = String(s.arrival_status ?? '').toLowerCase()
+    const percoStatus = String(s.perco_status_name ?? '').toLowerCase()
+    return name.includes(q) || cafedra.includes(q) || position.includes(q) || status.includes(q) || percoStatus.includes(q)
+  })
+})
+
 const filteredPeriodStats = computed(() => {
   const q = (props.search ?? '').trim().toLowerCase()
   const bySubdivision =
@@ -333,28 +355,22 @@ const filteredPeriodStats = computed(() => {
 
 const pageTitle = computed(() => {
   if (activeGroup.value === 'academic') {
-    return 'ППС / Пунктуальность'
+    return 'Количество преподавателей:'
   }
   return 'Количество сотрудников:'
 })
 
 const emptyTitle = computed(() => {
-  if (activeGroup.value === 'academic') {
-    return 'Раздел ППС в разработке'
-  }
   return 'Данные не найдены'
 })
 
 const emptyDescription = computed(() => {
-  if (activeGroup.value === 'academic') {
-    return 'Заглушка для пунктуальности ППС. Данные появятся после реализации.'
-  }
   return 'Попробуйте изменить строку поиска или обновить список.'
 })
 
 const activeCount = computed(() => {
-  if (activeGroup.value !== 'staff') {
-    return 0
+  if (activeGroup.value === 'academic') {
+    return filteredAcademicFirstIn.value.length
   }
   return punctualityMode.value === 'day' ? filteredFirstIn.value.length : filteredPeriodStats.value.length
 })
@@ -377,6 +393,8 @@ watch(
       arrivalStatusFilter.value = 'ALL'
       scheduleTypeFilter.value = 'ALL'
       percoStatusFilter.value = 'ALL'
+    } else {
+      punctualityMode.value = 'day'
     }
     await ensureDataLoadedForRoute()
   }
@@ -385,7 +403,7 @@ watch(
 watch(
   punctualityDate,
   async (nextDate, prevDate) => {
-    if (activeGroup.value !== 'staff' || punctualityMode.value !== 'day') {
+    if (punctualityMode.value !== 'day') {
       return
     }
     const nextDateValue = toDateString(nextDate)
@@ -400,7 +418,13 @@ watch(
 watch(
   punctualityMode,
   async (nextMode, prevMode) => {
-    if (activeGroup.value !== 'staff' || nextMode === prevMode) {
+    if (nextMode === prevMode) {
+      return
+    }
+    if (activeGroup.value === 'academic') {
+      if (nextMode !== 'day') {
+        punctualityMode.value = 'day'
+      }
       return
     }
     if (nextMode === 'period') {
@@ -434,7 +458,10 @@ watch(
 )
 
 async function ensureDataLoadedForRoute() {
-  if (activeGroup.value !== 'staff') {
+  if (activeGroup.value === 'academic') {
+    if (!academicFirstInLoaded.value) {
+      await refresh()
+    }
     return
   }
   if (punctualityMode.value === 'day') {
@@ -450,12 +477,13 @@ async function ensureDataLoadedForRoute() {
 }
 
 async function refresh() {
-  if (activeGroup.value !== 'staff') {
-    return
-  }
   isLoading.value = true
   try {
-    if (punctualityMode.value === 'day') {
+    if (activeGroup.value === 'academic') {
+      const { data } = await listAcademicFirstIn(toDateString(punctualityDate.value))
+      academicFirstIn.value = data
+      academicFirstInLoaded.value = true
+    } else if (punctualityMode.value === 'day') {
       const { data } = await listStaffFirstIn(toDateString(punctualityDate.value))
       firstIn.value = data
       firstInLoaded.value = true

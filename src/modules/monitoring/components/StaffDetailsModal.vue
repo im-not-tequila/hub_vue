@@ -13,13 +13,18 @@
               <div class="shrink-0 p-4 sm:p-5">
                 <div class="flex items-start gap-4">
                   <div class="shrink-0">
-                    <div class="h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] sm:h-24 sm:w-24">
+                    <button
+                      type="button"
+                      class="h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-800 dark:bg-white/[0.03] sm:h-24 sm:w-24"
+                      :aria-label="`Открыть фото ${staffFullName(staff)}`"
+                      @click="previewPhoto = true"
+                    >
                       <HubUserAisAvatar
                         class="h-full w-full object-cover"
                         :user-id="staff.user_id"
                         :alt="staffFullName(staff)"
                       />
-                    </div>
+                    </button>
                   </div>
 
                   <div class="min-w-0">
@@ -287,6 +292,32 @@
       </div>
     </template>
   </Modal>
+
+  <Modal
+    v-model="previewPhoto"
+    :title="staff ? `Фото: ${staffFullName(staff)}` : 'Фото'"
+    class-name="w-[90vw] max-w-4xl max-h-[95vh]"
+  >
+    <template #body>
+      <div class="flex h-[calc(95vh-10rem)] max-h-[calc(95vh-10rem)] justify-center overflow-hidden">
+        <div class="h-full w-full overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-900">
+          <HubUserAisAvatar
+            v-if="staff"
+            class="h-full w-full object-contain"
+            :user-id="staff.user_id"
+            :alt="staffFullName(staff)"
+          />
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <div class="flex justify-end">
+        <BaseButton type="button" variant="outline" @click="previewPhoto = false">
+          Закрыть
+        </BaseButton>
+      </div>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -325,6 +356,7 @@ const model = computed({
 const logs = ref<StaffAccessLogItem[]>([])
 const logsLoading = ref(false)
 const logsError = ref<string | null>(null)
+const previewPhoto = ref(false)
 const schedules = ref<StaffWorkScheduleItem[]>([])
 const scheduleLoading = ref(false)
 const scheduleSaving = ref(false)
@@ -367,10 +399,21 @@ function formatMarried(isMarried: number | null) {
 watch(
   () => [props.modelValue, props.staff?.platonus_id] as const,
   async ([isOpen]) => {
-    if (!isOpen) return
+    if (!isOpen) {
+      previewPhoto.value = false
+      return
+    }
     await Promise.all([loadLogs(), loadSchedules()])
   },
   { immediate: true },
+)
+
+watch(
+  () => [startDate.value, endDate.value] as const,
+  async () => {
+    if (!props.modelValue || !canLoadLogs.value) return
+    await loadLogs()
+  },
 )
 
 async function loadLogs() {

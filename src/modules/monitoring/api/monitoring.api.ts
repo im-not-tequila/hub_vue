@@ -1,5 +1,9 @@
 import httpClient from '@/api/httpClient'
 import type {
+  CafedraItem,
+  StaffAcademicListItem,
+  StaffAcademicDetailItem,
+  StaffAcademicFirstInItem,
   ArrivalStatus,
   StructuralSubdivisionItem,
   StaffAccessLogItem,
@@ -12,6 +16,10 @@ import type {
 } from '@/modules/monitoring/types/staff'
 
 export const listActiveStaff = () => httpClient.get<StaffListItem[]>('/monitoring/employees/staff/list/active')
+export const listActiveAcademic = (lang: 'ru' | 'kz' | 'en' = 'ru') =>
+  httpClient.get<StaffAcademicListItem[]>('/monitoring/employees/academic/list/active', {
+    params: { lang },
+  })
 
 export interface ExportActiveStaffParams {
   structural_subdivision_id?: number
@@ -27,13 +35,23 @@ export const exportActiveStaffExcel = (params: ExportActiveStaffParams) =>
 export const getEmployeeStaff = (platonusId: number) =>
   httpClient.get<StaffDetailItem>(`/monitoring/employees/staff/${platonusId}`)
 
+export const getEmployeeAcademic = (platonusId: number, lang: 'ru' | 'kz' | 'en' = 'ru') =>
+  httpClient.get<StaffAcademicDetailItem>(`/monitoring/employees/academic/${platonusId}`, {
+    params: { lang },
+  })
+
 export const listEmployeeAccessLogs = (platonusId: number, startDate: string, endDate: string) =>
-  httpClient.get<StaffAccessLogItem[]>(`/monitoring/employees/staff/${platonusId}/access-logs`, {
+  httpClient.get<StaffAccessLogItem[]>(`/monitoring/employees/${platonusId}/access-logs`, {
     params: { start_date: startDate, end_date: endDate },
   })
 
 export const listStaffFirstIn = (date?: string) =>
   httpClient.get<StaffFirstInItem[]>('/monitoring/employees/staff/list/punctuality', {
+    params: { date },
+  })
+
+export const listAcademicFirstIn = (date?: string) =>
+  httpClient.get<StaffAcademicFirstInItem[]>('/monitoring/employees/academic/list/punctuality', {
     params: { date },
   })
 
@@ -65,7 +83,12 @@ export interface PercoStatusItem {
 export const listPercoStatuses = () => httpClient.get<PercoStatusItem[]>('/perco/status')
 
 export const listStructuralSubdivisions = () =>
-  httpClient.get<StructuralSubdivisionItem[]>('/structural-subdivisions')
+  httpClient.get<StructuralSubdivisionItem[]>('/structure/list/subdivision')
+
+export const listUsedCafedras = (lang: 'ru' | 'kz' | 'en' = 'ru') =>
+  httpClient.get<CafedraItem[]>('/structure/cafedras', {
+    params: { lang },
+  })
 
 export interface StaffWorkSchedulePayload {
   start_date: string

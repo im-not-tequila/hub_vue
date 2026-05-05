@@ -6,11 +6,10 @@
           <table class="min-w-full table-fixed border-collapse">
             <colgroup>
               <col class="w-3/12" />
+              <col class="w-3/12" />
               <col class="w-2/12" />
               <col class="w-2/12" />
               <col class="w-2/12" />
-              <col class="w-2/12" />
-              <col class="w-1/12" />
             </colgroup>
 
             <thead class="sticky top-0 z-10 bg-white dark:bg-gray-800">
@@ -32,10 +31,10 @@
                   <button
                     type="button"
                     class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                    @click="toggleSort('structural_subdivision_name')"
+                    @click="toggleSort('cafedra_name')"
                   >
-                    <span>Отдел</span>
-                    <span v-if="sortKey === 'structural_subdivision_name'" class="opacity-70">
+                    <span>Кафедра</span>
+                    <span v-if="sortKey === 'cafedra_name'" class="opacity-70">
                       <SmallChevronUpIcon v-if="sortAsc" />
                       <SmallChevronDownIcon v-else />
                     </span>
@@ -58,9 +57,6 @@
                   <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Статус</span>
                 </th>
                 <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
-                  <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">График работы</span>
-                </th>
-                <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
                   <button
                     type="button"
                     class="inline-flex items-center gap-1 font-medium text-gray-500 text-theme-xs dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -81,8 +77,7 @@
                 v-for="(row, idx) in sortedRows"
                 :key="rowKey(row, idx)"
                 class="w-full border-t border-gray-100 transition dark:border-gray-800"
-                :class="[rowClass(row.arrival_status), row.platonus_id != null ? 'cursor-pointer' : '']"
-                @click="onRowClick(row)"
+                :class="rowClass(row.arrival_status)"
               >
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
                   <div class="flex items-center gap-3">
@@ -93,38 +88,27 @@
                         :alt="staffFullName(row)"
                       />
                     </div>
-                    <div class="min-w-0">
-                      <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate">
-                        {{ staffFullName(row) || '—' }}
-                      </span>
-                      <span v-if="row.absence_status" class="block text-gray-500 text-theme-xs dark:text-gray-400 truncate">
-                        {{ row.absence_status }}
-                      </span>
-                    </div>
+                    <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate">
+                      {{ staffFullName(row) || '—' }}
+                    </span>
                   </div>
                 </td>
 
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
                   <span class="text-gray-700 text-theme-sm dark:text-gray-200 line-clamp-2">
-                    {{ row.structural_subdivision_name ?? '—' }}
+                    {{ academicCafedraDisplay(row) }}
                   </span>
                 </td>
 
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
                   <span class="text-gray-700 text-theme-sm dark:text-gray-200 line-clamp-2">
-                    {{ row.position_name ?? '—' }}
+                    {{ academicPositionDisplay(row) }}
                   </span>
                 </td>
 
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
                   <span class="text-gray-700 text-theme-sm dark:text-gray-200">
-                    {{ row.perco_status_name ?? (row as any).perco_status ?? (row as any).status_name ?? '—' }}
-                  </span>
-                </td>
-
-                <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
-                  <span class="text-gray-700 text-theme-sm dark:text-gray-200">
-                    {{ row.work_schedule ?? '08:30 - 17:30' }}
+                    {{ row.perco_status_name ?? '—' }}
                   </span>
                 </td>
 
@@ -144,27 +128,21 @@
 
 <script setup lang="ts">
 import HubUserAisAvatar from '@/components/common/HubUserAisAvatar.vue'
-import { computed, ref } from 'vue'
-import SmallChevronUpIcon from '@/components/icons/SmallChevronUpIcon.vue'
 import SmallChevronDownIcon from '@/components/icons/SmallChevronDownIcon.vue'
-import type { ArrivalStatus, StaffFirstInItem } from '@/modules/monitoring/types/staff'
-import { staffFullName } from '@/modules/monitoring/types/staff'
+import SmallChevronUpIcon from '@/components/icons/SmallChevronUpIcon.vue'
+import {
+  academicCafedraDisplay,
+  academicPositionDisplay,
+  staffFullName,
+} from '@/modules/monitoring/types/staff'
+import type { ArrivalStatus, StaffAcademicFirstInItem } from '@/modules/monitoring/types/staff'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
-  rows: StaffFirstInItem[]
+  rows: StaffAcademicFirstInItem[]
 }>()
 
-const emit = defineEmits<{
-  (e: 'select', platonusId: number): void
-}>()
-
-function onRowClick(row: StaffFirstInItem) {
-  if (row.platonus_id != null) {
-    emit('select', row.platonus_id)
-  }
-}
-
-type SortKey = 'full_name' | 'structural_subdivision_name' | 'position_name' | 'createdate'
+type SortKey = 'full_name' | 'cafedra_name' | 'position_name' | 'createdate'
 
 const sortKey = ref<SortKey>('createdate')
 const sortAsc = ref(false)
@@ -202,10 +180,10 @@ const sortedRows = computed(() => {
     switch (sortKey.value) {
       case 'full_name':
         return compareNullableString(staffFullName(ra), staffFullName(rb)) * dirMul
-      case 'structural_subdivision_name':
-        return compareNullableString(ra.structural_subdivision_name, rb.structural_subdivision_name) * dirMul
+      case 'cafedra_name':
+        return compareNullableString(academicCafedraDisplay(ra), academicCafedraDisplay(rb)) * dirMul
       case 'position_name':
-        return compareNullableString(ra.position_name, rb.position_name) * dirMul
+        return compareNullableString(academicPositionDisplay(ra), academicPositionDisplay(rb)) * dirMul
       case 'createdate':
         return compareNullableDate(ra.createdate, rb.createdate) * dirMul
       default:
@@ -234,10 +212,9 @@ function formatDateTime(value: string | null) {
   return dt.toLocaleString()
 }
 
-function rowKey(row: StaffFirstInItem, idx: number) {
+function rowKey(row: StaffAcademicFirstInItem, idx: number) {
   const pid = row.platonus_id ?? 'none'
   const cd = row.createdate ?? 'none'
   return `${pid}:${cd}:${idx}`
 }
 </script>
-

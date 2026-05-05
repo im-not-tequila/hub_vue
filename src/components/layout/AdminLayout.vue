@@ -24,7 +24,8 @@ import AppSidebar from './sidebar/AppSidebar.vue'
 import AppHeader from './header/AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import Backdrop from './Backdrop.vue'
-import {defineProps, ref} from "vue";
+import { defineProps, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const props = defineProps({
   sidebar: {
@@ -41,7 +42,16 @@ const props = defineProps({
 
 
 const { isExpanded, isHovered } = useSidebar()
+const route = useRoute()
 const search = ref('')
+
+watch(
+  () => route.fullPath,
+  () => {
+    search.value = ''
+  }
+)
+
 defineExpose({ search })
 
 </script>

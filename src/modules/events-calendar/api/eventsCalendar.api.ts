@@ -8,7 +8,7 @@ import type {
 } from '../types/eventsCalendar'
 
 export function getStructuralSubdivisions(lang: Lang) {
-  return httpClient.get<StructuralSubdivisionItem[]>('/structural-subdivisions', { params: { lang } })
+  return httpClient.get<StructuralSubdivisionItem[]>('/structure/list/subdivision', { params: { lang } })
 }
 
 export function getEventPlaces(lang: Lang) {
