@@ -108,6 +108,7 @@ export interface StaffFirstInItem {
   absence_status: StaffAbsenceStatus
   structural_subdivision_name: string | null
   position_name: string | null
+  rate: number | null
   createdate: string | null
   arrival_status: ArrivalStatus | null
   perco_status_name: string | null
@@ -122,6 +123,8 @@ export interface StaffPunctualityStatsItem {
   structural_subdivision_id: number | null
   structural_subdivision_name: string | null
   position_name: string | null
+  rate: number | null
+  perco_status_name: string | null
   before_shift_start_count: number
   within_grace_period_count: number
   late_count: number

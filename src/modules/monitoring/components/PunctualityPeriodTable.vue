@@ -9,6 +9,8 @@
               <col class="w-2/12" />
               <col class="w-2/12" />
               <col class="w-1/12" />
+              <col class="w-2/12" />
+              <col class="w-1/12" />
               <col class="w-1/12" />
               <col class="w-1/12" />
               <col class="w-1/12" />
@@ -45,6 +47,12 @@
                 </th>
                 <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
                   <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Должность</span>
+                </th>
+                <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
+                  <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Ставка</span>
+                </th>
+                <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
+                  <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Статус</span>
                 </th>
                 <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
                   <button
@@ -142,6 +150,16 @@
                   </span>
                 </td>
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
+                  <span class="text-gray-700 text-theme-sm dark:text-gray-200">
+                    {{ formatRate(row.rate) }}
+                  </span>
+                </td>
+                <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
+                  <span class="text-gray-700 text-theme-sm dark:text-gray-200 line-clamp-2">
+                    {{ row.perco_status_name ?? '—' }}
+                  </span>
+                </td>
+                <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
                   <span class="text-gray-700 text-theme-sm dark:text-gray-200">{{ row.before_shift_start_count }}</span>
                 </td>
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
@@ -225,5 +243,10 @@ const sortedRows = computed(() => {
 function formatHours(value: number) {
   if (!Number.isFinite(value)) return '0.00'
   return value.toFixed(2)
+}
+
+function formatRate(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return String(value)
 }
 </script>

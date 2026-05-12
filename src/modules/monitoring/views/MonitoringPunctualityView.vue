@@ -349,7 +349,8 @@ const filteredPeriodStats = computed(() => {
     const fullName = (item.full_name ?? '').toLowerCase()
     const dept = (item.structural_subdivision_name ?? '').toLowerCase()
     const position = (item.position_name ?? '').toLowerCase()
-    return fullName.includes(q) || dept.includes(q) || position.includes(q)
+    const status = (item.perco_status_name ?? '').toLowerCase()
+    return fullName.includes(q) || dept.includes(q) || position.includes(q) || status.includes(q)
   })
 })
 
@@ -586,6 +587,8 @@ async function downloadPunctualityPeriodExcel() {
         row.full_name ?? '—',
         row.structural_subdivision_name ?? '—',
         row.position_name ?? '—',
+        row.rate != null && Number.isFinite(row.rate) ? String(row.rate) : '—',
+        row.perco_status_name ?? '—',
         String(row.before_shift_start_count ?? 0),
         String(row.within_grace_period_count ?? 0),
         String(row.late_count ?? 0),
@@ -605,6 +608,8 @@ async function downloadPunctualityPeriodExcel() {
         <th>ФИО</th>
         <th>Отдел</th>
         <th>Должность</th>
+        <th>Ставка</th>
+        <th>Статус</th>
         <th>Раньше смены</th>
         <th>В 5 минут</th>
         <th>Опоздания</th>

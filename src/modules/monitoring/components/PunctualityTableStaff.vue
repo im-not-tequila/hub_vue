@@ -8,6 +8,7 @@
               <col class="w-3/12" />
               <col class="w-2/12" />
               <col class="w-2/12" />
+              <col class="w-1/12" />
               <col class="w-2/12" />
               <col class="w-2/12" />
               <col class="w-1/12" />
@@ -53,6 +54,9 @@
                       <SmallChevronDownIcon v-else />
                     </span>
                   </button>
+                </th>
+                <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
+                  <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Ставка</span>
                 </th>
                 <th class="px-3 py-2 text-left sm:px-4 sm:py-3">
                   <span class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Статус</span>
@@ -113,6 +117,11 @@
                 <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
                   <span class="text-gray-700 text-theme-sm dark:text-gray-200 line-clamp-2">
                     {{ row.position_name ?? '—' }}
+                  </span>
+                </td>
+                <td class="px-3 py-2 align-middle sm:px-4 sm:py-4">
+                  <span class="text-gray-700 text-theme-sm dark:text-gray-200">
+                    {{ formatRate(row.rate) }}
                   </span>
                 </td>
 
@@ -232,6 +241,11 @@ function formatDateTime(value: string | null) {
   const dt = new Date(value)
   if (Number.isNaN(dt.getTime())) return value
   return dt.toLocaleString()
+}
+
+function formatRate(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return String(value)
 }
 
 function rowKey(row: StaffFirstInItem, idx: number) {
