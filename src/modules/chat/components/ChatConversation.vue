@@ -60,7 +60,14 @@
     </div>
 
     <!-- Messages -->
-    <div ref="messagesContainer" class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+    <div
+      ref="messagesContainer"
+      class="flex-1 overflow-y-auto px-5 py-4 space-y-4"
+      @scroll.passive="onMessagesScroll"
+    >
+      <div v-if="isLoadingOlder" class="flex items-center justify-center">
+        <span class="text-xs text-gray-400 dark:text-gray-500">Загрузка предыдущих сообщений...</span>
+      </div>
       <div v-if="messages.length === 0" class="flex items-center justify-center h-full">
         <p class="text-sm text-gray-400 dark:text-gray-500">Начните диалог — напишите первое сообщение</p>
       </div>
@@ -322,11 +329,14 @@ const props = defineProps<{
   chat: Chat | null
   messages: ChatMessage[]
   currentUserId: number
+  hasMoreMessages: boolean
+  isLoadingOlder: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'send', payload: { text: string; files: File[] }): void
   (e: 'back'): void
+  (e: 'load-more'): void
 }>()
 
 const newMessage = ref('')
@@ -352,6 +362,11 @@ const isImageModalOpen = ref(false)
 const modalImageUrl = ref('')
 const modalImageName = ref('')
 const imageZoom = ref(1)
+const pendingPrependSnapshot = ref<{
+  scrollTop: number
+  scrollHeight: number
+  firstMessageId: number | null
+} | null>(null)
 
 function sendMessage() {
   if (!canSend.value) return
@@ -497,7 +512,62 @@ function scrollToBottom() {
   })
 }
 
-watch(() => props.messages.length, scrollToBottom)
+function onMessagesScroll() {
+  const container = messagesContainer.value
+  if (!container) return
+  if (!props.hasMoreMessages || props.isLoadingOlder || pendingPrependSnapshot.value) return
+  if (container.scrollTop > 60) return
+
+  pendingPrependSnapshot.value = {
+    scrollTop: container.scrollTop,
+    scrollHeight: container.scrollHeight,
+    firstMessageId: props.messages[0]?.id ?? null,
+  }
+  emit('load-more')
+}
+
+watch(
+  () => props.messages.map((message) => message.id),
+  (newMessageIds, oldMessageIds) => {
+    if (oldMessageIds.length === 0) {
+      pendingPrependSnapshot.value = null
+      scrollToBottom()
+      return
+    }
+
+    if (pendingPrependSnapshot.value) {
+      const snapshot = pendingPrependSnapshot.value
+      const prepended = newMessageIds[0] !== snapshot.firstMessageId
+
+      if (prepended) {
+        nextTick(() => {
+          const container = messagesContainer.value
+          if (!container) return
+          const deltaHeight = container.scrollHeight - snapshot.scrollHeight
+          container.scrollTop = snapshot.scrollTop + deltaHeight
+        })
+        pendingPrependSnapshot.value = null
+        return
+      }
+    }
+
+    const oldLastId = oldMessageIds[oldMessageIds.length - 1] ?? null
+    const newLastId = newMessageIds[newMessageIds.length - 1] ?? null
+    if (newLastId !== oldLastId) {
+      scrollToBottom()
+    }
+  },
+)
+
+watch(
+  () => props.isLoadingOlder,
+  (isLoading) => {
+    if (!isLoading && pendingPrependSnapshot.value) {
+      pendingPrependSnapshot.value = null
+    }
+  },
+)
+
 watch(() => props.chat?.id, scrollToBottom)
 
 window.addEventListener('keydown', onEscapeKey)

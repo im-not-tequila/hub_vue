@@ -31,7 +31,10 @@
               :chat="selectedChat"
               :messages="currentMessages"
               :current-user-id="currentUserId"
+              :has-more-messages="hasMoreMessages"
+              :is-loading-older="isLoadingOlderMessages"
               @send="onSendMessage"
+              @load-more="onLoadOlderMessages"
               @back="selectedChatId = null"
           />
         </div>
@@ -58,6 +61,11 @@ const users = ref<ChatUser[]>([])
 const currentMessages = ref<ChatMessage[]>([])
 const selectedChatId = ref<number | null>(null)
 const isMobile = ref(false)
+const hasMoreMessages = ref(true)
+const isLoadingOlderMessages = ref(false)
+const messagesOffset = ref(0)
+
+const MESSAGES_PAGE_LIMIT = 20
 
 const onlineUsers = computed(() => users.value.filter(u => u.is_online))
 
@@ -84,18 +92,47 @@ async function loadUsers() {
   }
 }
 
-async function loadMessages(chatId: number) {
+async function loadMessages(chatId: number, options: { appendOlder?: boolean } = {}) {
+  const { appendOlder = false } = options
+
+  if (appendOlder) {
+    if (isLoadingOlderMessages.value || !hasMoreMessages.value) return
+    isLoadingOlderMessages.value = true
+  } else {
+    hasMoreMessages.value = true
+    messagesOffset.value = 0
+  }
+
   try {
-    const { data } = await chatApi.getMessages(chatId)
-    currentMessages.value = data
+    const offset = appendOlder ? messagesOffset.value : 0
+    const { data } = await chatApi.getMessages(chatId, MESSAGES_PAGE_LIMIT, offset)
+
+    if (appendOlder) {
+      if (data.length > 0) {
+        const existingIds = new Set(currentMessages.value.map((message) => message.id))
+        const olderMessages = data.filter((message) => !existingIds.has(message.id))
+        currentMessages.value = [...olderMessages, ...currentMessages.value]
+      }
+    } else {
+      currentMessages.value = data
+    }
+
+    messagesOffset.value += data.length
+    if (data.length < MESSAGES_PAGE_LIMIT) {
+      hasMoreMessages.value = false
+    }
   } catch (e) {
     console.error('Failed to load messages:', e)
+  } finally {
+    if (appendOlder) {
+      isLoadingOlderMessages.value = false
+    }
   }
 }
 
 async function onSelectChat(chatId: number) {
   selectedChatId.value = chatId
-  await loadMessages(chatId)
+  await loadMessages(chatId, { appendOlder: false })
 
   const chat = chats.value.find(c => c.id === chatId)
   if (chat && chat.unread_count > 0) {
@@ -107,6 +144,11 @@ async function onSelectChat(chatId: number) {
       console.error('Failed to mark as read:', e)
     }
   }
+}
+
+async function onLoadOlderMessages() {
+  if (!selectedChatId.value) return
+  await loadMessages(selectedChatId.value, { appendOlder: true })
 }
 
 async function onSelectUser(userId: number) {
@@ -211,7 +253,7 @@ async function handleWsMessage(data: any) {
   const chatId: number = data.chat_id
 
   if (selectedChatId.value === chatId) {
-    await loadMessages(chatId)
+    await loadMessages(chatId, { appendOlder: false })
     await chatApi.markMessagesAsRead(chatId).catch(() => {})
     void chatPresenceStore.refreshUnreadCount()
   }
