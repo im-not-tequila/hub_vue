@@ -4,13 +4,18 @@
       class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
+      <span class="mr-2 overflow-hidden rounded-full h-9 w-9 lg:mr-3 lg:h-11 lg:w-11">
         <img v-if="avatarSrc" :src="avatarSrc" alt="User" @error="onUserAvatarImgError"/>
       </span>
 
-      <span v-if="user" class="block mr-1 font-medium text-theme-sm">{{ user.shortname }} </span>
+      <span
+        v-if="user"
+        class="block max-w-[120px] truncate mr-1 font-medium text-sm lg:max-w-[180px] text-right"
+      >
+        {{ user.shortname }}
+      </span>
 
-      <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
+      <ChevronDownIcon class="hidden sm:block" :class="{ 'rotate-180': dropdownOpen }" />
     </button>
 
     <!-- Dropdown Start -->

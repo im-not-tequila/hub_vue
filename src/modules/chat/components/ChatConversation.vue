@@ -25,7 +25,7 @@
         </svg>
       </button>
 
-      <template v-if="chat.participant">
+      <template v-if="chat.type === 'direct' && chat.participant">
         <ChatAvatar
             :user-id="chat.participant.id"
             :firstname="chat.participant.firstname"
@@ -44,13 +44,27 @@
           </p>
         </div>
       </template>
+      <template v-else>
+        <div class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold shrink-0">
+          {{ getChatInitials(chat) }}
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+            {{ getChatTitle(chat) }}
+          </h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 truncate">
+            {{ getChatSubtitle(chat) }}
+          </p>
+        </div>
+      </template>
 
       <div class="flex items-center gap-1 ml-auto">
-        <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition">
+        <!-- <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
           </svg>
-        </button>
+        </button> -->
         <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
@@ -60,10 +74,12 @@
     </div>
 
     <!-- Messages -->
+    <div class="relative flex-1 min-h-0">
     <div
       ref="messagesContainer"
-      class="flex-1 overflow-y-auto px-5 py-4 space-y-4"
+      class="h-full overflow-y-auto px-5 py-4 space-y-4"
       @scroll.passive="onMessagesScroll"
+      @click="closeMessageActionsMenu"
     >
       <div v-if="isLoadingOlder" class="flex items-center justify-center">
         <span class="text-xs text-gray-400 dark:text-gray-500">Загрузка предыдущих сообщений...</span>
@@ -78,24 +94,80 @@
             v-if="msg.created_at && (i === 0 || !isSameDay(msg.created_at, messages[i - 1].created_at))"
             class="flex items-center justify-center"
         >
-          <span class="px-3 py-1 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700">
+          <span class="px-3 py-1 text-xs text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 ">
             {{ formatDate(msg.created_at) }}
           </span>
         </div>
 
         <!-- Message bubble -->
         <div
-            class="flex"
+            class="flex items-start gap-2"
             :class="msg.sender_id === currentUserId ? 'justify-end' : 'justify-start'"
         >
+          <button
+            v-if="isForwardSelectionMode"
+            type="button"
+            class="mt-2 h-5 w-5 mr-3 shrink-0 rounded border transition flex items-center justify-center"
+            :class="isMessageSelectedForForward(msg.id)
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-transparent'"
+            @click.stop="toggleForwardMessage(msg.id)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.25 7.312a1 1 0 0 1-1.42-.004l-3.25-3.312a1 1 0 1 1 1.43-1.4l2.54 2.587 6.54-6.594a1 1 0 0 1 1.404-.003Z" clip-rule="evenodd" />
+            </svg>
+          </button>
+
           <div
-              class="max-w-[70%] min-w-0 overflow-hidden px-3 py-2 rounded-2xl shadow-sm"
+            class="relative group/message max-w-[70%] min-w-0"
+            :class="msg.sender_id === currentUserId ? 'ml-auto' : 'mr-auto'"
+          >
+            <div
+              v-if="activeMessageActionsMenuId === msg.id && !isForwardSelectionMode"
+              class="absolute top-5 right-0 z-20 min-w-[140px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-1"
+              @click.stop
+            >
+              <button
+                type="button"
+                class="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
+                @click.stop="startForwardSelection(msg.id)"
+              >
+                Переслать
+              </button>
+            </div>
+
+            <div
+              class="relative w-full min-w-0 overflow-hidden px-3 py-2 rounded-2xl shadow-sm"
               :class="[
                 msg.sender_id === currentUserId
-                  ? 'bg-brand-500 text-white rounded-br-md'
+                  ? 'bg-brand-500 text-white rounded-br-md pr-8 pb-4'
                   : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white/90 rounded-bl-md border border-gray-100 dark:border-gray-700'
               ]"
-          >
+            >
+            <button
+              v-if="!isForwardSelectionMode"
+              type="button"
+              class="absolute top-1.5 right-1.5 z-10 h-6 w-6 rounded-full bg-gray-900/70 text-gray-300 flex items-center justify-center opacity-0 group-hover/message:opacity-100 transition"
+              @click.stop="toggleMessageActionsMenu(msg.id)"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <p
+              v-if="msg.is_forwarded && msg.original_sender_id"
+              class="text-[11px] mb-1.5"
+              :class="msg.sender_id === currentUserId ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'"
+            >
+              Переслано от {{ resolveForwardAuthor(msg.original_sender_id) }}
+            </p>
+            <p
+              v-if="chat.type === 'group' && msg.sender_id !== currentUserId"
+              class="text-[11px] font-medium mb-1.5"
+              :class="msg.sender_id === currentUserId ? 'text-white/80' : 'text-brand-500 dark:text-brand-300'"
+            >
+              {{ resolveForwardAuthor(msg.sender_id) }}
+            </p>
             <div v-if="msg.attachments.length > 0" class="space-y-2 mb-1.5">
               <div
                 v-for="attachment in msg.attachments"
@@ -112,15 +184,15 @@
                     :src="resolveAttachmentUrl(attachment.url)"
                     :alt="attachment.original_name"
                     class="rounded-xl max-h-72 w-auto object-cover"
+                    @load="onAttachmentImageLoad"
                   />
                 </button>
 
-                <a
+                <button
                   v-else
-                  :href="resolveAttachmentUrl(attachment.url)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center gap-2 rounded-xl px-3 py-2 bg-black/10 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/15 transition"
+                  type="button"
+                  class="w-full flex items-center gap-2 rounded-xl px-3 py-2 bg-black/10 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/15 transition text-left"
+                  @click="downloadAttachment(attachment)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H6.75A2.25 2.25 0 0 0 4.5 4.5v15A2.25 2.25 0 0 0 6.75 21.75h10.5A2.25 2.25 0 0 0 19.5 19.5V17.25m-6-9 2.25 2.25m0 0L18 8.25m-2.25 2.25V15" />
@@ -129,22 +201,24 @@
                     <p class="text-xs font-medium truncate">{{ attachment.original_name }}</p>
                     <p class="text-[11px] opacity-70">{{ formatBytes(attachment.size_bytes) }}</p>
                   </div>
-                </a>
+                </button>
               </div>
             </div>
 
             <p
               v-if="msg.text"
-              class="text-sm leading-relaxed whitespace-pre-wrap break-all"
+              class="text-sm leading-relaxed whitespace-pre-wrap break-all mr-10"
             >
               {{ msg.text }}
             </p>
 
-            <div class="mt-1 flex items-center justify-end gap-1">
+            <div class="absolute bottom-2 right-3 flex items-center gap-1">
               <span
                   v-if="msg.created_at"
                   class="text-[10px] leading-none"
-                  :class="msg.sender_id === currentUserId ? 'text-white/60' : 'text-gray-400 dark:text-gray-500'"
+                  :class="[
+                    msg.sender_id === currentUserId ? 'text-white/60' : 'text-gray-400 dark:text-gray-500'
+                  ]"
               >
                 {{ formatMessageTime(msg.created_at) }}
               </span>
@@ -174,14 +248,37 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="m7.5 12.75 6 6 9-13.5" />
               </svg>
             </div>
+            </div>
           </div>
         </div>
       </template>
     </div>
 
+    <!-- Scroll to bottom button -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-2"
+    >
+      <button
+        v-if="isScrolledUp"
+        type="button"
+        class="absolute bottom-4 right-4 z-10 h-9 w-9 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md text-gray-500 dark:text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 hover:border-brand-300 dark:hover:border-brand-700 flex items-center justify-center transition"
+        @click="scrollToBottom"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </Transition>
+    </div>
+
     <!-- Input -->
     <div class="px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shrink-0">
-      <div v-if="selectedFiles.length > 0" class="mb-2 flex flex-wrap gap-2">
+      <div v-if="selectedFiles.length > 0 && !isForwardSelectionMode" class="mb-2 flex flex-wrap gap-2">
         <div
           v-for="(file, index) in selectedFiles"
           :key="`${file.name}-${file.lastModified}-${index}`"
@@ -201,6 +298,7 @@
 
       <div class="flex items-end gap-2">
         <button
+          v-if="!isForwardSelectionMode"
           class="p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition shrink-0"
           @click="openFilePicker"
         >
@@ -209,7 +307,7 @@
           </svg>
         </button>
 
-        <div class="flex-1 relative">
+        <div v-if="!isForwardSelectionMode" class="flex-1 relative">
           <textarea
               v-model="newMessage"
               placeholder="Введите сообщение..."
@@ -220,23 +318,46 @@
               ref="textareaRef"
           ></textarea>
         </div>
+        <div v-else class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0"
+              @click="cancelForwardSelection"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <p class="text-sm text-gray-700 dark:text-gray-200 truncate">
+              Выбрано сообщений: <span class="font-semibold">{{ selectedForwardCount }}</span>
+            </p>
+          </div>
+        </div>
 
         <button
             class="p-2.5 rounded-xl transition shrink-0"
             :class="[
-              canSend
+              (isForwardSelectionMode ? selectedForwardCount > 0 : canSend)
                 ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'
             ]"
-            :disabled="!canSend"
-            @click="sendMessage"
+            :disabled="isForwardSelectionMode ? selectedForwardCount === 0 : !canSend"
+            @click="isForwardSelectionMode ? openForwardRecipientsModal() : sendMessage()"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+          <div v-if="isForwardSelectionMode" class="flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 8.25V4.5m0 0L19.5 9m-4.5-4.5L10.5 9M4.5 12v6.75A2.25 2.25 0 0 0 6.75 21h10.5a2.25 2.25 0 0 0 2.25-2.25V12" />
+            </svg>
+            <span class="text-sm font-medium">Переслать</span>
+          </div>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
           </svg>
         </button>
       </div>
       <input
+        v-if="!isForwardSelectionMode"
         ref="fileInputRef"
         type="file"
         multiple
@@ -245,6 +366,184 @@
       />
     </div>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="isForwardRecipientsModalOpen"
+      class="fixed inset-0 z-[90] bg-black/40 flex items-center justify-center p-4"
+      @click="closeForwardRecipientsModal"
+    >
+      <div
+        class="w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl"
+        @click.stop
+      >
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Кому переслать</h4>
+          <button
+            type="button"
+            class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            @click="closeForwardRecipientsModal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="px-4 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </span>
+            <input
+              v-model="forwardRecipientSearchQuery"
+              type="text"
+              placeholder="Поиск людей..."
+              class="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10 transition"
+            />
+          </div>
+        </div>
+        <div class="px-3 py-2 h-[60vh] overflow-y-auto">
+          <div v-if="filteredChatRecipients.length > 0">
+            <div class="px-3 pt-2.5 pb-1.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Чаты</span>
+            </div>
+            <button
+              v-for="item in filteredChatRecipients"
+              :key="'chat-recipient-' + item.chat.id"
+              type="button"
+              class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              @click="toggleForwardTargetChat(item.chat.id)"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <ChatAvatar
+                  v-if="item.chat.type === 'direct' && item.chat.participant"
+                  :user-id="item.chat.participant.id"
+                  :firstname="item.chat.participant.firstname"
+                  :lastname="item.chat.participant.lastname"
+                  :online="item.chat.participant.is_online"
+                  size="sm"
+                  border-color="border-white dark:border-gray-800"
+                />
+                <div
+                  v-else
+                  class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 flex items-center justify-center text-xs font-semibold shrink-0"
+                >
+                  {{ getChatInitials(item.chat) }}
+                </div>
+                <div class="text-left min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {{ getChatTitle(item.chat) }}
+                  </p>
+                  <p
+                    class="text-xs truncate"
+                    :class="item.chat.type === 'direct' && item.chat.participant?.is_online ? 'text-green-500' : 'text-gray-500 dark:text-gray-400'"
+                  >
+                    {{ getForwardChatSubtitle(item.chat) }}
+                  </p>
+                </div>
+              </div>
+              <span
+                class="h-4.5 w-4.5 rounded-full border flex items-center justify-center shrink-0"
+                :class="isForwardTargetChatSelected(item.chat.id)
+                  ? 'border-brand-500 bg-brand-500'
+                  : 'border-gray-300 dark:border-gray-600'"
+              >
+                <span
+                  v-if="isForwardTargetChatSelected(item.chat.id)"
+                  class="h-2 w-2 rounded-full bg-white"
+                />
+              </span>
+            </button>
+          </div>
+
+          <div
+            v-if="forwardRecipientSearchQuery.trim().length > 0 && filteredChatRecipients.length > 0 && (filteredOtherRecipients.length > 0 || isLoadingOtherRecipients)"
+            class="h-px bg-gray-100 dark:bg-gray-700 mx-3 my-1"
+          />
+
+          <div v-if="forwardRecipientSearchQuery.trim().length > 0">
+            <div class="px-3 pt-2.5 pb-1.5 flex items-center justify-between">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Остальные пользователи</span>
+              <span v-if="isLoadingOtherRecipients" class="text-[10px] text-gray-400 dark:text-gray-500">Загрузка...</span>
+            </div>
+            <button
+              v-for="user in filteredOtherRecipients"
+              :key="'other-recipient-' + user.id"
+              type="button"
+              class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              @click="toggleForwardRecipient(user.id)"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <ChatAvatar
+                  :user-id="user.id"
+                  :firstname="user.firstname"
+                  :lastname="user.lastname"
+                  :online="user.is_online"
+                  size="sm"
+                  variant="neutral"
+                  border-color="border-white dark:border-gray-800"
+                />
+                <div class="text-left min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {{ user.lastname }} {{ user.firstname }}
+                  </p>
+                  <p
+                    class="text-xs truncate"
+                    :class="user.is_online ? 'text-green-500' : 'text-gray-500 dark:text-gray-400'"
+                  >
+                    {{ user.is_online ? 'Онлайн' : formatLastSeen(user.last_seen) }}
+                  </p>
+                </div>
+              </div>
+              <span
+                class="h-4.5 w-4.5 rounded-full border flex items-center justify-center shrink-0"
+                :class="isForwardRecipientSelected(user.id)
+                  ? 'border-brand-500 bg-brand-500'
+                  : 'border-gray-300 dark:border-gray-600'"
+              >
+                <span
+                  v-if="isForwardRecipientSelected(user.id)"
+                  class="h-2 w-2 rounded-full bg-white"
+                />
+              </span>
+            </button>
+          </div>
+
+          <p
+            v-if="!isLoadingOtherRecipients && forwardRecipientSearchQuery.trim().length > 0 && filteredChatRecipients.length === 0 && filteredOtherRecipients.length === 0"
+            class="px-3 py-6 text-sm text-gray-500 dark:text-gray-400 text-center"
+          >
+            Никого не найдено
+          </p>
+          <p
+            v-else-if="forwardRecipientSearchQuery.trim().length === 0 && filteredChatRecipients.length === 0"
+            class="px-3 py-6 text-sm text-gray-500 dark:text-gray-400 text-center"
+          >
+            Нет доступных диалогов
+          </p>
+        </div>
+        <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+          <button
+            type="button"
+            class="px-3 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            @click="closeForwardRecipientsModal"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            class="px-3 py-2 rounded-lg text-sm bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="selectedForwardTargetCount === 0 || selectedForwardCount === 0"
+            @click="submitForwardMessages"
+          >
+            Переслать<span v-if="selectedForwardTargetCount > 0"> ({{ selectedForwardTargetCount }})</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 
   <Teleport to="body">
     <div
@@ -322,12 +621,15 @@
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch, nextTick } from 'vue'
-import type { Chat, ChatAttachment, ChatMessage } from '../types/chat'
+import type { Chat, ChatAttachment, ChatMessage, ChatUser } from '../types/chat'
+import * as chatApi from '../api/chat.api'
 import ChatAvatar from './ChatAvatar.vue'
 
 const props = defineProps<{
   chat: Chat | null
+  chats: Chat[]
   messages: ChatMessage[]
+  userNamesMap: Record<number, string>
   currentUserId: number
   hasMoreMessages: boolean
   isLoadingOlder: boolean
@@ -335,6 +637,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'send', payload: { text: string; files: File[] }): void
+  (e: 'forward', payload: { messageIds: number[]; targetChatIds: number[]; recipientIds: number[] }): void
   (e: 'back'): void
   (e: 'load-more'): void
 }>()
@@ -343,8 +646,10 @@ const newMessage = ref('')
 const selectedFiles = ref<File[]>([])
 const messagesContainer = ref<HTMLElement | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const isScrolledUp = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const apiBaseUrl = (import.meta.env.VITE_API_URL as string)?.replace(/\/$/, '') ?? ''
+const configuredApiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim()
+const apiBaseUrl = (configuredApiBaseUrl || 'http://127.0.0.1:8000/v1').replace(/\/$/, '')
 
 const apiOrigin = (() => {
   try {
@@ -362,11 +667,25 @@ const isImageModalOpen = ref(false)
 const modalImageUrl = ref('')
 const modalImageName = ref('')
 const imageZoom = ref(1)
+const activeMessageActionsMenuId = ref<number | null>(null)
+const isForwardSelectionMode = ref(false)
+const selectedForwardMessageIds = ref<Set<number>>(new Set())
+const isForwardRecipientsModalOpen = ref(false)
+const selectedForwardChatIds = ref<Set<number>>(new Set())
+const selectedForwardRecipientIds = ref<Set<number>>(new Set())
+const forwardRecipientSearchQuery = ref('')
+const otherRecipients = ref<ChatUser[]>([])
+const isLoadingOtherRecipients = ref(false)
+const hasLoadedOtherRecipients = ref(false)
 const pendingPrependSnapshot = ref<{
   scrollTop: number
   scrollHeight: number
   firstMessageId: number | null
 } | null>(null)
+const selectedForwardCount = computed(() => selectedForwardMessageIds.value.size)
+const selectedForwardRecipientCount = computed(() => selectedForwardRecipientIds.value.size)
+const selectedForwardChatCount = computed(() => selectedForwardChatIds.value.size)
+const selectedForwardTargetCount = computed(() => selectedForwardChatCount.value + selectedForwardRecipientCount.value)
 
 function sendMessage() {
   if (!canSend.value) return
@@ -379,6 +698,194 @@ function sendMessage() {
   if (textareaRef.value) {
     textareaRef.value.style.height = 'auto'
   }
+}
+
+function closeMessageActionsMenu() {
+  activeMessageActionsMenuId.value = null
+}
+
+function toggleMessageActionsMenu(messageId: number) {
+  activeMessageActionsMenuId.value = activeMessageActionsMenuId.value === messageId ? null : messageId
+}
+
+function isMessageSelectedForForward(messageId: number): boolean {
+  return selectedForwardMessageIds.value.has(messageId)
+}
+
+function startForwardSelection(messageId: number) {
+  isForwardSelectionMode.value = true
+  selectedForwardMessageIds.value = new Set([messageId])
+  activeMessageActionsMenuId.value = null
+}
+
+function toggleForwardMessage(messageId: number) {
+  const next = new Set(selectedForwardMessageIds.value)
+  if (next.has(messageId)) {
+    next.delete(messageId)
+  } else {
+    next.add(messageId)
+  }
+  selectedForwardMessageIds.value = next
+}
+
+function cancelForwardSelection() {
+  isForwardSelectionMode.value = false
+  selectedForwardMessageIds.value = new Set()
+  selectedForwardChatIds.value = new Set()
+  selectedForwardRecipientIds.value = new Set()
+  closeForwardRecipientsModal()
+}
+
+function openForwardRecipientsModal() {
+  if (!selectedForwardCount.value) return
+  isForwardRecipientsModalOpen.value = true
+  forwardRecipientSearchQuery.value = ''
+}
+
+function closeForwardRecipientsModal() {
+  isForwardRecipientsModalOpen.value = false
+}
+
+const chatRecipientIds = computed(() => {
+  const ids = new Set<number>()
+  for (const chat of props.chats) {
+    const participantId = chat.participant?.id
+    if (!participantId || participantId === props.currentUserId) continue
+    ids.add(participantId)
+  }
+  return ids
+})
+
+interface ForwardRecipientChatItem {
+  chat: Chat
+}
+
+const chatRecipients = computed<ForwardRecipientChatItem[]>(() => {
+  return props.chats
+    .filter((chat) => chat.id !== props.chat?.id)
+    .filter((chat) => chat.type === 'group' || (Boolean(chat.participant) && chat.participant!.id !== props.currentUserId))
+    .map((chat) => ({ chat }))
+})
+
+const filteredChatRecipients = computed(() => {
+  const q = forwardRecipientSearchQuery.value.trim().toLowerCase()
+  if (!q) return chatRecipients.value
+
+  return chatRecipients.value.filter(({ chat }) => {
+    const searchText = chat.type === 'direct' && chat.participant
+      ? `${chat.participant.lastname} ${chat.participant.firstname} ${chat.participant.shortname}`.toLowerCase()
+      : `${chat.title ?? 'групповой чат'} ${chat.participants.map(participant => `${participant.user.lastname} ${participant.user.firstname}`).join(' ')}`.toLowerCase()
+    return searchText.includes(q)
+  })
+})
+
+const filteredOtherRecipients = computed(() => {
+  const q = forwardRecipientSearchQuery.value.trim().toLowerCase()
+  if (!q) return []
+
+  return otherRecipients.value.filter((user) => {
+    const fullName = `${user.lastname} ${user.firstname} ${user.shortname}`.toLowerCase()
+    return fullName.includes(q)
+  })
+})
+
+async function loadOtherRecipients() {
+  if (isLoadingOtherRecipients.value || hasLoadedOtherRecipients.value) return
+  isLoadingOtherRecipients.value = true
+  try {
+    const { data } = await chatApi.getChatUsers()
+    otherRecipients.value = data.filter((user) => {
+      if (user.id === props.currentUserId) return false
+      return !chatRecipientIds.value.has(user.id)
+    })
+    hasLoadedOtherRecipients.value = true
+  } catch (error) {
+    console.error('Failed to load users for forwarding:', error)
+  } finally {
+    isLoadingOtherRecipients.value = false
+  }
+}
+
+function isForwardRecipientSelected(userId: number): boolean {
+  return selectedForwardRecipientIds.value.has(userId)
+}
+
+function isForwardTargetChatSelected(chatId: number): boolean {
+  return selectedForwardChatIds.value.has(chatId)
+}
+
+function toggleForwardTargetChat(chatId: number) {
+  const next = new Set(selectedForwardChatIds.value)
+  if (next.has(chatId)) {
+    next.delete(chatId)
+  } else {
+    next.add(chatId)
+  }
+  selectedForwardChatIds.value = next
+}
+
+function toggleForwardRecipient(userId: number) {
+  const next = new Set(selectedForwardRecipientIds.value)
+  if (next.has(userId)) {
+    next.delete(userId)
+  } else {
+    next.add(userId)
+  }
+  selectedForwardRecipientIds.value = next
+}
+
+function submitForwardMessages() {
+  const recipientIds = Array.from(selectedForwardRecipientIds.value)
+  const targetChatIds = Array.from(selectedForwardChatIds.value)
+  if (!recipientIds.length && !targetChatIds.length) return
+  const selectedIds = Array.from(selectedForwardMessageIds.value)
+  if (!selectedIds.length) return
+
+  const orderedIds = props.messages
+    .filter((message) => selectedForwardMessageIds.value.has(message.id))
+    .map((message) => message.id)
+
+  emit('forward', {
+    messageIds: orderedIds.length ? orderedIds : selectedIds,
+    targetChatIds,
+    recipientIds,
+  })
+  cancelForwardSelection()
+}
+
+function resolveForwardAuthor(userId: number): string {
+  return props.userNamesMap[userId] ?? `Пользователь #${userId}`
+}
+
+function getChatTitle(chat: Chat): string {
+  if (chat.type === 'group') return chat.title || 'Групповой чат'
+  if (chat.participant) return `${chat.participant.lastname} ${chat.participant.firstname}`.trim()
+  return 'Чат'
+}
+
+function getChatInitials(chat: Chat): string {
+  const title = getChatTitle(chat).trim()
+  const words = title.split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return `${words[0][0]}${words[1][0]}`.toUpperCase()
+  return title.slice(0, 2).toUpperCase() || 'ГЧ'
+}
+
+function getActiveParticipantCount(chat: Chat): number {
+  return chat.participants.filter(participant => participant.is_active).length
+}
+
+function getChatSubtitle(chat: Chat): string {
+  const count = getActiveParticipantCount(chat)
+  if (count === 1) return '1 участник'
+  if (count > 1 && count < 5) return `${count} участника`
+  return `${count} участников`
+}
+
+function getForwardChatSubtitle(chat: Chat): string {
+  if (chat.type === 'direct' && chat.participant) {
+    return chat.participant.is_online ? 'Онлайн' : formatLastSeen(chat.participant.last_seen)
+  }
+  return getChatSubtitle(chat)
 }
 
 function autoResize(event: Event) {
@@ -433,6 +940,23 @@ function openImageModal(attachment: ChatAttachment) {
   isImageModalOpen.value = true
 }
 
+async function downloadAttachment(attachment: ChatAttachment) {
+  try {
+    const requestUrl = resolveAttachmentRequestUrl(attachment.url)
+    const { data } = await chatApi.downloadAttachment(requestUrl)
+    const blobUrl = window.URL.createObjectURL(data)
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = attachment.original_name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(blobUrl)
+  } catch (error) {
+    console.error('Failed to download attachment:', error)
+  }
+}
+
 function closeImageModal() {
   isImageModalOpen.value = false
 }
@@ -468,9 +992,44 @@ function resolveAttachmentUrl(url: string): string {
   return `${apiBaseUrl || apiOrigin}/${url}`
 }
 
+function resolveAttachmentRequestUrl(url: string): string {
+  const resolvedUrl = resolveAttachmentUrl(url)
+  if (!/^https?:\/\//.test(resolvedUrl)) return resolvedUrl
+
+  try {
+    const parsedResolvedUrl = new URL(resolvedUrl)
+    const parsedApiBaseUrl = new URL(apiBaseUrl || apiOrigin)
+    if (parsedResolvedUrl.origin === parsedApiBaseUrl.origin) {
+      const apiBasePath = parsedApiBaseUrl.pathname.replace(/\/$/, '')
+      const normalizedPath = apiBasePath && parsedResolvedUrl.pathname.startsWith(`${apiBasePath}/`)
+        ? parsedResolvedUrl.pathname.slice(apiBasePath.length)
+        : parsedResolvedUrl.pathname
+      return `${normalizedPath}${parsedResolvedUrl.search}`
+    }
+  } catch {
+    // fallback to resolved URL below
+  }
+
+  return resolvedUrl
+}
+
 function onEscapeKey(event: KeyboardEvent) {
-  if (event.key === 'Escape' && isImageModalOpen.value) {
+  if (event.key !== 'Escape') return
+
+  if (isImageModalOpen.value) {
     closeImageModal()
+    return
+  }
+  if (isForwardRecipientsModalOpen.value) {
+    closeForwardRecipientsModal()
+    return
+  }
+  if (isForwardSelectionMode.value) {
+    cancelForwardSelection()
+    return
+  }
+  if (activeMessageActionsMenuId.value !== null) {
+    closeMessageActionsMenu()
   }
 }
 
@@ -512,9 +1071,19 @@ function scrollToBottom() {
   })
 }
 
+function onAttachmentImageLoad() {
+  if (!isScrolledUp.value) {
+    scrollToBottom()
+  }
+}
+
 function onMessagesScroll() {
   const container = messagesContainer.value
   if (!container) return
+
+  const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+  isScrolledUp.value = distanceFromBottom > 150
+
   if (!props.hasMoreMessages || props.isLoadingOlder || pendingPrependSnapshot.value) return
   if (container.scrollTop > 60) return
 
@@ -569,6 +1138,23 @@ watch(
 )
 
 watch(() => props.chat?.id, scrollToBottom)
+watch(
+  () => props.chat?.id,
+  () => {
+    cancelForwardSelection()
+    closeMessageActionsMenu()
+    isScrolledUp.value = false
+    nextTick(() => textareaRef.value?.focus())
+  },
+)
+watch(
+  () => forwardRecipientSearchQuery.value.trim(),
+  (query) => {
+    if (query.length > 0) {
+      void loadOtherRecipients()
+    }
+  },
+)
 
 window.addEventListener('keydown', onEscapeKey)
 onUnmounted(() => {

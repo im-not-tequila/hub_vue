@@ -17,6 +17,7 @@
               :current-user-id="currentUserId"
               @select-chat="onSelectChat"
               @select-user="onSelectUser"
+              @create-group-chat="onCreateGroupChat"
           />
         </div>
 
@@ -29,11 +30,14 @@
         >
           <ChatConversation
               :chat="selectedChat"
+              :chats="chats"
               :messages="currentMessages"
+              :user-names-map="userNamesMap"
               :current-user-id="currentUserId"
               :has-more-messages="hasMoreMessages"
               :is-loading-older="isLoadingOlderMessages"
               @send="onSendMessage"
+              @forward="onForwardMessages"
               @load-more="onLoadOlderMessages"
               @back="selectedChatId = null"
           />
@@ -68,6 +72,28 @@ const messagesOffset = ref(0)
 const MESSAGES_PAGE_LIMIT = 20
 
 const onlineUsers = computed(() => users.value.filter(u => u.is_online))
+const userNamesMap = computed<Record<number, string>>(() => {
+  const map: Record<number, string> = {}
+
+  for (const user of users.value) {
+    map[user.id] = `${user.lastname} ${user.firstname}`.trim()
+  }
+  for (const chat of chats.value) {
+    if (chat.participant) {
+      map[chat.participant.id] = `${chat.participant.lastname} ${chat.participant.firstname}`.trim()
+    }
+    for (const participant of chat.participants) {
+      map[participant.user.id] = `${participant.user.lastname} ${participant.user.firstname}`.trim()
+    }
+  }
+
+  const me = userStore.user
+  if (me) {
+    map[me.id] = `${me.lastname} ${me.firstname}`.trim()
+  }
+
+  return map
+})
 
 const selectedChat = computed(() => {
   if (!selectedChatId.value) return null
@@ -152,7 +178,7 @@ async function onLoadOlderMessages() {
 }
 
 async function onSelectUser(userId: number) {
-  const existingChat = chats.value.find(c => c.participant?.id === userId)
+  const existingChat = chats.value.find(c => c.type === 'direct' && c.participant?.id === userId)
   if (existingChat) {
     await onSelectChat(existingChat.id)
     return
@@ -164,6 +190,19 @@ async function onSelectUser(userId: number) {
     await onSelectChat(newChat.id)
   } catch (e) {
     console.error('Failed to create chat:', e)
+  }
+}
+
+async function onCreateGroupChat(payload: { title: string; participantIds: number[] }) {
+  try {
+    const { data: newChat } = await chatApi.createGroupChat({
+      title: payload.title,
+      participant_ids: payload.participantIds,
+    })
+    chats.value.unshift(newChat)
+    await onSelectChat(newChat.id)
+  } catch (e) {
+    console.error('Failed to create group chat:', e)
   }
 }
 
@@ -195,6 +234,41 @@ async function onSendMessage(payload: SendPayload) {
     if (chat) chat.last_message = newMsg
   } catch (e) {
     console.error('Failed to send message:', e)
+  }
+}
+
+async function onForwardMessages(payload: { messageIds: number[]; targetChatIds: number[]; recipientIds: number[] }) {
+  if (payload.messageIds.length === 0 || (payload.targetChatIds.length === 0 && payload.recipientIds.length === 0)) return
+
+  try {
+    const updatedChatIds = new Set<number>()
+
+    for (const targetChatId of payload.targetChatIds) {
+      for (const messageId of payload.messageIds) {
+        const { data: forwarded } = await chatApi.forwardMessage(messageId, {
+          target_chat_id: targetChatId,
+        })
+        updatedChatIds.add(forwarded.chat_id)
+      }
+    }
+
+    for (const recipientId of payload.recipientIds) {
+      for (const messageId of payload.messageIds) {
+        const { data: forwarded } = await chatApi.forwardMessage(messageId, {
+          recipient_id: recipientId,
+        })
+        updatedChatIds.add(forwarded.chat_id)
+      }
+    }
+
+    await loadChats()
+    if (selectedChatId.value && updatedChatIds.has(selectedChatId.value)) {
+      await loadMessages(selectedChatId.value, { appendOlder: false })
+      await chatApi.markMessagesAsRead(selectedChatId.value).catch(() => {})
+      void chatPresenceStore.refreshUnreadCount()
+    }
+  } catch (e) {
+    console.error('Failed to forward messages:', e)
   }
 }
 

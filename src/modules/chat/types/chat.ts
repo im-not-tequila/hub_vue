@@ -14,19 +14,64 @@ export interface ChatMessage {
     sender_id: number
     text: string | null
     is_read: boolean
+    is_forwarded: boolean
+    forwarded_from_message_id: number | null
+    original_message_id: number | null
+    original_sender_id: number | null
     created_at: string | null
     attachments: ChatAttachment[]
 }
 
+export interface ChatParticipant {
+    user: ChatUser
+    role: 'admin' | 'member'
+    is_active: boolean
+    added_by_user_id: number | null
+    removed_by_user_id: number | null
+    removed_at: string | null
+    created_at: string | null
+}
+
 export interface Chat {
     id: number
+    type: 'direct' | 'group'
+    title: string | null
+    avatar_url: string | null
+    creator_user_id: number | null
     participant: ChatUser | null
+    participants: ChatParticipant[]
+    my_role: 'admin' | 'member' | null
     last_message: ChatMessage | null
     unread_count: number
 }
 
+export interface CreateGroupPayload {
+    title: string
+    participantIds: number[]
+}
+
 export interface CreateChatRequest {
     participant_id: number
+}
+
+export interface CreateGroupChatRequest {
+    title: string
+    participant_ids: number[]
+    avatar_url?: string | null
+}
+
+export interface UpdateGroupChatRequest {
+    title?: string
+    avatar_url?: string | null
+}
+
+export interface AddChatParticipantsRequest {
+    user_ids: number[]
+    role?: 'admin' | 'member'
+}
+
+export interface UpdateChatParticipantRequest {
+    role: 'admin' | 'member'
 }
 
 export interface SendMessageRequest {
@@ -34,8 +79,13 @@ export interface SendMessageRequest {
     attachment_ids?: number[]
 }
 
+export interface ForwardMessageRequest {
+    target_chat_id?: number
+    recipient_id?: number
+}
+
 export interface MarkAsReadResponse {
-    updated: number
+    marked_count: number
 }
 
 export interface ChatAttachment {

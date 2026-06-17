@@ -43,17 +43,17 @@
                   <InfoRow label="Отдел" :value="staff.structural_subdivision_name ?? undefined" />
                   <InfoRow label="Должность" :value="staff.position_name ?? undefined" />
                   <InfoRow label="Ставка" :value="formatRate(staff.rate)" />
-                  <InfoRow label="Телефон" :value="staff.mobile_phone ?? undefined" />
+                  <!-- <InfoRow label="Телефон" :value="staff.mobile_phone ?? undefined" /> -->
                   <InfoRow label="Дата рождения" :value="staff.birth_date ?? undefined" />
-                  <InfoRow label="Национальность" :value="staff.nationality ?? undefined" />
-                  <InfoRow label="Семейное положение" :value="formatMarried(staff.is_married)" />
-                  <InfoRow label="IIN" :value="staff.iin ?? undefined" />
+                  <!-- <InfoRow label="Национальность" :value="staff.nationality ?? undefined" /> -->
+                  <!-- <InfoRow label="Семейное положение" :value="formatMarried(staff.is_married)" /> -->
+                  <!-- <InfoRow label="IIN" :value="staff.iin ?? undefined" /> -->
                   <InfoRow label="Platonus ID" :value="String(staff.platonus_id)" />
-                  <InfoRow
+                  <!-- <InfoRow
                     label="Адрес"
                     :value="staff.address ?? undefined"
                     class="sm:col-span-2"
-                  />
+                  /> -->
                 </div>
 
                 <div class="mt-6 border-t border-gray-100 pt-5 dark:border-gray-800">

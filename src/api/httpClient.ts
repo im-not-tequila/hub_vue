@@ -1,8 +1,11 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
 
+const configuredApiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim()
+const apiBaseUrl = configuredApiBaseUrl || 'http://127.0.0.1:8000/v1'
+
 const httpClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: apiBaseUrl,
     withCredentials: true,              // ⚡ отправляем куки на сервер
     headers: { 'Content-Type': 'application/json' },
     timeout: 30000,

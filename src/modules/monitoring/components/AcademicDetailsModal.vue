@@ -36,17 +36,17 @@
 
               <div class="flex-1 min-h-0 overflow-y-scroll p-4 pt-0 custom-scrollbar sm:p-5 sm:pt-0">
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <InfoRow label="Телефон" :value="academic.mobile_phone ?? undefined" />
+                  <!-- <InfoRow label="Телефон" :value="academic.mobile_phone ?? undefined" /> -->
                   <InfoRow label="Дата рождения" :value="academic.birth_date ?? undefined" />
-                  <InfoRow label="Национальность" :value="academic.nationality ?? undefined" />
-                  <InfoRow label="Семейное положение" :value="formatMarried(academic.is_married)" />
-                  <InfoRow label="IIN" :value="academic.iin ?? undefined" />
+                  <!-- <InfoRow label="Национальность" :value="academic.nationality ?? undefined" /> -->
+                  <!-- <InfoRow label="Семейное положение" :value="formatMarried(academic.is_married)" /> -->
+                  <!-- <InfoRow label="IIN" :value="academic.iin ?? undefined" /> -->
                   <InfoRow label="Platonus ID" :value="String(academic.platonus_id)" />
-                  <InfoRow
+                  <!-- <InfoRow
                     label="Адрес"
                     :value="academic.address ?? undefined"
                     class="sm:col-span-2"
-                  />
+                  /> -->
                 </div>
 
                 <div class="mt-6 border-t border-gray-100 pt-5 dark:border-gray-800">

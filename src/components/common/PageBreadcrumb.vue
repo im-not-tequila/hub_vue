@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 interface BreadcrumbProps {
@@ -99,7 +99,20 @@ interface BreadcrumbProps {
 const props = defineProps<BreadcrumbProps>()
 const route = useRoute()
 
+const BREADCRUMB_COLLAPSED_STORAGE_KEY = 'page-breadcrumb-collapsed'
 const collapsed = ref(false)
+
+onMounted(() => {
+  const savedValue = localStorage.getItem(BREADCRUMB_COLLAPSED_STORAGE_KEY)
+  if (savedValue === null) {
+    return
+  }
+  collapsed.value = savedValue === 'true'
+})
+
+watch(collapsed, (value) => {
+  localStorage.setItem(BREADCRUMB_COLLAPSED_STORAGE_KEY, String(value))
+})
 
 type BreadcrumbItem = {
   label: string

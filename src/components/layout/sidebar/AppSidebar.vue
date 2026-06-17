@@ -1,7 +1,7 @@
 <template>
   <aside
       :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen overflow-x-hidden z-50 border-r border-gray-200',
+      'fixed mt-0 flex flex-col top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen overflow-x-hidden z-[70] border-r border-gray-200',
       'transition-[width,transform] duration-300 ease-in-out',
       {
         'lg:w-[320px]': isExpanded || isMobileOpen || isHovered,
@@ -123,6 +123,7 @@
                 <router-link
                     v-else-if="item.path"
                     :to="item.path"
+                    @click="handleItemSelect"
                     :class="[
                     'menu-item group relative',
                     {
@@ -205,6 +206,7 @@
                               <li v-for="nestedSubItem in subItem.subItems" :key="nestedSubItem.name">
                                 <router-link
                                     :to="nestedSubItem.path"
+                                    @click="handleItemSelect"
                                     :class="[
                                     'menu-dropdown-item pt-1 pb-1',
                                     {
@@ -226,6 +228,7 @@
                         <router-link
                             v-else
                             :to="subItem.path"
+                            @click="handleItemSelect"
                             :class="[
                             'menu-dropdown-item',
                             {
@@ -410,6 +413,13 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 const toggleNestedSubmenu = (groupIndex, itemIndex, subIndex) => {
   const key = `${groupIndex}-${itemIndex}-${subIndex}`;
   openNestedSubmenuKey.value = openNestedSubmenuKey.value === key ? null : key;
+};
+
+const handleItemSelect = () => {
+  // Сворачиваем только после выбора конечного раздела.
+  if (isMobileOpen.value || isExpanded.value) {
+    toggleSidebar();
+  }
 };
 
 const isNestedSubmenuOpen = (groupIndex, itemIndex, subIndex, subItem) => {

@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-    <!-- Search -->
+  <div class="relative flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
     <div class="p-4 border-b border-gray-100 dark:border-gray-800">
+      <!-- Search -->
       <div class="relative" ref="searchWrapper">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -144,9 +144,8 @@
             ]"
             @click="$emit('selectChat', chat.id)"
         >
-          <!-- Avatar -->
           <ChatAvatar
-              v-if="chat.participant"
+              v-if="chat.type === 'direct' && chat.participant"
               :user-id="chat.participant.id"
               :firstname="chat.participant.firstname"
               :lastname="chat.participant.lastname"
@@ -154,9 +153,15 @@
               size="md"
               :variant="selectedChatId === chat.id ? 'solid' : 'neutral'"
           />
+          <div
+              v-else
+              class="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+              :class="selectedChatId === chat.id ? 'bg-brand-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300'"
+          >
+            {{ getChatInitials(chat) }}
+          </div>
 
-          <!-- Info -->
-          <div v-if="chat.participant" class="flex-1 min-w-0 text-left">
+          <div class="flex-1 min-w-0 text-left">
             <div class="flex items-center justify-between">
               <span
                   class="text-sm font-medium truncate"
@@ -166,7 +171,7 @@
                       : 'text-gray-900 dark:text-white/90'
                   ]"
               >
-                {{ chat.participant.lastname }} {{ chat.participant.firstname }}
+                {{ getChatTitle(chat) }}
               </span>
               <span
                   v-if="chat.last_message?.created_at"
@@ -187,7 +192,7 @@
               >
                 {{ chat.last_message.sender_id === currentUserId ? 'Вы: ' : '' }}{{ getMessagePreview(chat.last_message) }}
               </p>
-              <p v-else class="text-xs text-gray-400 dark:text-gray-500">Нет сообщений</p>
+              <p v-else class="text-xs text-gray-400 dark:text-gray-500">{{ getEmptyChatSubtitle(chat) }}</p>
               <span
                   v-if="chat.unread_count > 0"
                   class="shrink-0 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-brand-500 rounded-full"
@@ -203,13 +208,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Floating action button -->
+    <button
+        type="button"
+        class="group absolute bottom-5 right-4 z-20 flex items-center h-12 min-w-[48px] rounded-full bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/30 px-3.5 transition-all duration-300 ease-in-out cursor-pointer"
+        @click="openCreateGroupModal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      <span class="whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-[120px] transition-all duration-300 ease-in-out text-sm font-medium group-hover:ml-2 leading-none">
+        Создать чат
+      </span>
+    </button>
+
+    <CreateGroupChatModal
+        v-model="isCreateGroupModalOpen"
+        :all-users="allUsers"
+        :current-user-id="currentUserId"
+        @create-group-chat="emit('createGroupChat', $event)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { Chat, ChatMessage, ChatUser } from '../types/chat'
+import type { Chat, ChatMessage, ChatUser, CreateGroupPayload } from '../types/chat'
 import ChatAvatar from './ChatAvatar.vue'
+import CreateGroupChatModal from './CreateGroupChatModal.vue'
 
 interface SearchResult {
   user: ChatUser
@@ -227,16 +254,18 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'selectChat', chatId: number): void
   (e: 'selectUser', userId: number): void
+  (e: 'createGroupChat', payload: CreateGroupPayload): void
 }>()
 
 const searchQuery = ref('')
 const isSearchFocused = ref(false)
 const searchWrapper = ref<HTMLElement | null>(null)
+const isCreateGroupModalOpen = ref(false)
 
 const chatParticipantIds = computed(() => {
   const ids = new Set<number>()
   for (const chat of props.chats) {
-    if (chat.participant) ids.add(chat.participant.id)
+    if (chat.type === 'direct' && chat.participant) ids.add(chat.participant.id)
   }
   return ids
 })
@@ -248,11 +277,10 @@ const searchResults = computed<SearchResult[]>(() => {
   return props.allUsers
       .filter(user => {
         if (user.id === props.currentUserId) return false
-        const fullName = `${user.lastname} ${user.firstname} ${user.shortname}`.toLowerCase()
-        return fullName.includes(q)
+        return getUserSearchText(user).includes(q)
       })
       .map(user => {
-        const chat = props.chats.find(c => c.participant?.id === user.id) ?? null
+        const chat = props.chats.find(c => c.type === 'direct' && c.participant?.id === user.id) ?? null
         return { user, chat }
       })
       .sort((a, b) => {
@@ -284,6 +312,10 @@ function closeSearch() {
   isSearchFocused.value = false
 }
 
+function openCreateGroupModal() {
+  isCreateGroupModalOpen.value = true
+}
+
 function onClickOutside(e: MouseEvent) {
   if (searchWrapper.value && !searchWrapper.value.contains(e.target as Node)) {
     isSearchFocused.value = false
@@ -292,6 +324,31 @@ function onClickOutside(e: MouseEvent) {
 
 onMounted(() => document.addEventListener('mousedown', onClickOutside))
 onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
+
+function getUserSearchText(user: ChatUser): string {
+  return `${user.lastname} ${user.firstname} ${user.shortname} ${user.post ?? ''}`.toLowerCase()
+}
+
+function getChatTitle(chat: Chat): string {
+  if (chat.type === 'group') return chat.title || 'Групповой чат'
+  if (chat.participant) return `${chat.participant.lastname} ${chat.participant.firstname}`.trim()
+  return 'Чат'
+}
+
+function getChatInitials(chat: Chat): string {
+  const title = getChatTitle(chat).trim()
+  const words = title.split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return `${words[0][0]}${words[1][0]}`.toUpperCase()
+  return title.slice(0, 2).toUpperCase() || 'ГЧ'
+}
+
+function getEmptyChatSubtitle(chat: Chat): string {
+  if (chat.type === 'group') {
+    const count = chat.participants.filter(participant => participant.is_active).length
+    return count > 0 ? `${count} участников` : 'Нет сообщений'
+  }
+  return 'Нет сообщений'
+}
 
 function formatTime(timestamp: string): string {
   const date = new Date(timestamp)

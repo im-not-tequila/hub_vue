@@ -30,6 +30,41 @@ function toDatetimeLocal(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+function extractApiErrorMessage(error: any, fallbackMessage: string): string {
+  const responseData = error?.response?.data
+  const detail = responseData?.detail ?? responseData
+
+  const normalizeMessage = (message: string): string =>
+    message
+      .replace(/^Value error,\s*/i, '')
+      .trim()
+
+  const pickMessage = (value: unknown): string => {
+    if (typeof value === 'string') return normalizeMessage(value)
+
+    if (Array.isArray(value)) {
+      const messages = value
+        .map(item => pickMessage(item))
+        .filter(Boolean)
+
+      return messages.join('\n')
+    }
+
+    if (value && typeof value === 'object') {
+      const obj = value as Record<string, unknown>
+
+      if (typeof obj.msg === 'string') return normalizeMessage(obj.msg)
+      if (typeof obj.message === 'string') return normalizeMessage(obj.message)
+      if (typeof obj.detail === 'string') return normalizeMessage(obj.detail)
+      if (Array.isArray(obj.detail)) return pickMessage(obj.detail)
+    }
+
+    return ''
+  }
+
+  return pickMessage(detail) || error?.message || fallbackMessage
+}
+
 export function useEventsCalendar() {
   const currentPageTitle = 'Календарь событий'
 
@@ -85,7 +120,7 @@ export function useEventsCalendar() {
       places.value = (placesRes.data ?? []) as any
       eventTypes.value = (typesRes.data ?? []) as any
     } catch (e: any) {
-      dictionariesError.value = e?.response?.data?.detail ?? e?.message ?? 'Не удалось загрузить справочники'
+      dictionariesError.value = extractApiErrorMessage(e, 'Не удалось загрузить справочники')
       console.error('loadDictionaries error', e)
     } finally {
       dictionariesLoading.value = false
@@ -239,7 +274,7 @@ export function useEventsCalendar() {
       createEventModalOpen.value = false
       refetchEvents()
     } catch (e: any) {
-      createEventError.value = e?.response?.data?.detail ?? e?.message ?? 'Ошибка при создании события'
+      createEventError.value = extractApiErrorMessage(e, 'Ошибка при создании события')
     } finally {
       createEventSubmitting.value = false
     }
@@ -297,7 +332,7 @@ export function useEventsCalendar() {
       editEventForm.start_datetime_local = start ? toDatetimeLocal(start) : ''
       editEventForm.end_datetime_local = end ? toDatetimeLocal(end) : ''
     } catch (e: any) {
-      editEventError.value = e?.response?.data?.detail ?? e?.message ?? 'Не удалось загрузить данные события'
+      editEventError.value = extractApiErrorMessage(e, 'Не удалось загрузить данные события')
     } finally {
       editEventLoading.value = false
     }
@@ -337,7 +372,7 @@ export function useEventsCalendar() {
       eventModalOpen.value = false
       refetchEvents()
     } catch (e: any) {
-      editEventError.value = e?.response?.data?.detail ?? e?.message ?? 'Ошибка при обновлении события'
+      editEventError.value = extractApiErrorMessage(e, 'Ошибка при обновлении события')
     } finally {
       editEventSubmitting.value = false
     }
@@ -356,7 +391,7 @@ export function useEventsCalendar() {
       selectedEventTitle.value = ''
       refetchEvents()
     } catch (e: any) {
-      deleteEventError.value = e?.response?.data?.detail ?? e?.message ?? 'Ошибка при удалении события'
+      deleteEventError.value = extractApiErrorMessage(e, 'Ошибка при удалении события')
     } finally {
       deleteEventSubmitting.value = false
     }

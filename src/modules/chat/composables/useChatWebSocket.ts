@@ -3,7 +3,8 @@ import { ref, onUnmounted } from 'vue'
 const RECONNECT_DELAY = 3000
 
 function buildWsUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_URL as string
+  const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim()
+  const apiUrl = (configuredApiUrl || 'http://127.0.0.1:8000/v1').replace(/\/$/, '')
   return apiUrl.replace(/^http/, 'ws') + '/chat/ws'
 }
 

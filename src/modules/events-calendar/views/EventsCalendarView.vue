@@ -9,10 +9,23 @@
     </div>
 
     <div class="events-calendar-layout flex-1 min-h-0 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden flex relative">
+      <div
+        v-if="isMobileViewport && !filtersCollapsed"
+        class="absolute inset-0 z-20 bg-gray-900/40 md:hidden"
+        @click="toggleFilters"
+      />
+
       <!-- Фильтры слева -->
       <aside
-        class="events-calendar-filters py-6 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] flex flex-col gap-4 transition-all duration-300 ease-out will-change-transform"
-        :class="filtersCollapsed ? 'w-0 -translate-x-full overflow-hidden p-0 border-r-0' : 'w-70 translate-x-0 p-4'"
+        class="events-calendar-filters border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col gap-4 transition-all duration-300 ease-out will-change-transform"
+        :class="[
+          isMobileViewport
+            ? 'absolute left-0 top-0 z-30 h-full w-[280px] max-w-[85vw] p-4'
+            : 'relative py-6 shrink-0',
+          isMobileViewport
+            ? (filtersCollapsed ? '-translate-x-full' : 'translate-x-0')
+            : (filtersCollapsed ? 'w-0 -translate-x-full overflow-hidden p-0 border-r-0' : 'w-70 translate-x-0 p-4'),
+        ]"
       >
         <div class="absolute right-[0px] top-0 z-10">
           <button
@@ -87,7 +100,7 @@
       <button
         v-if="filtersCollapsed"
         type="button"
-        class="absolute left-0 top-0 z-10 rounded-r-lg border-r border-b border-gray-200 bg-white px-1 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-all"
+        class="absolute left-0 top-0 z-20 rounded-r-lg border-r border-b border-gray-200 bg-white px-1 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-all"
         aria-label="Показать фильтры"
         @click="toggleFilters"
       >
@@ -193,7 +206,7 @@
             <CheckboxInput v-model="createEventForm.needs_media_capture" label="Нужна фото/видеосъёмка" />
             <CheckboxInput v-model="createEventForm.needs_tech_support" label="Нужна тех. поддержка" />
           </div>
-          <p v-if="createEventError" class="text-sm text-error-500">{{ createEventError }}</p>
+          <p v-if="createEventError" class="text-sm text-error-500 whitespace-pre-line">{{ createEventError }}</p>
         </form>
       </template>
       <template #footer>
@@ -246,7 +259,7 @@
             <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Описание</h3>
             <p class="whitespace-pre-wrap text-gray-600 dark:text-gray-400">{{ selectedEventDetail.description }}</p>
           </div>
-          <p v-if="deleteEventError" class="text-sm text-error-500">{{ deleteEventError }}</p>
+          <p v-if="deleteEventError" class="text-sm text-error-500 whitespace-pre-line">{{ deleteEventError }}</p>
         </div>
       </template>
       <template #footer>
@@ -372,7 +385,7 @@
             <CheckboxInput v-model="editEventForm.needs_media_capture" label="Нужна фото/видеосъёмка" />
             <CheckboxInput v-model="editEventForm.needs_tech_support" label="Нужна тех. поддержка" />
           </div>
-          <p v-if="editEventError" class="text-sm text-error-500">{{ editEventError }}</p>
+          <p v-if="editEventError" class="text-sm text-error-500 whitespace-pre-line">{{ editEventError }}</p>
         </form>
       </template>
       <template #footer>
@@ -386,7 +399,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import Modal from '@/components/ui/Modal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -448,6 +461,8 @@ const {
 } = useEventsCalendar()
 
 const filtersCollapsed = ref(false)
+const isMobileViewport = ref(false)
+const MOBILE_BREAKPOINT = 768
 
 const typeFilterOptions = computed<SelectOpt[]>(() => [
   { value: '', label: 'Все типы' },
@@ -475,6 +490,23 @@ async function toggleFilters() {
   await nextTick()
   calendarRef.value?.getApi?.()?.updateSize?.()
 }
+
+function syncViewportState() {
+  const nextIsMobile = window.innerWidth < MOBILE_BREAKPOINT
+  if (nextIsMobile !== isMobileViewport.value) {
+    isMobileViewport.value = nextIsMobile
+    filtersCollapsed.value = nextIsMobile
+  }
+}
+
+onMounted(() => {
+  syncViewportState()
+  window.addEventListener('resize', syncViewportState)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportState)
+})
 
 const calendarOptions = reactive({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
