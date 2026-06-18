@@ -5,26 +5,36 @@ import { useNotificationsStore } from '@/stores/notificationsStore'
 import { useChatPresenceStore } from '@/stores/chatPresenceStore'
 
 
-
-
-
 interface UserState {
     user: User | null
+    allowedSections: string[]
 }
 
 export const useUserStore = defineStore('user', {
     state: (): UserState => ({
-        user: null
+        user: null,
+        allowedSections: [],
     }),
 
     getters: {
-        isAuthenticated: (state) => !!state.user
+        isAuthenticated: (state) => !!state.user,
+        isSectionAllowed: (state) => (key: string) => state.allowedSections.includes(key),
     },
 
     actions: {
         async loadUser() {
             const { data } = await userApi.getProfile()
             this.setUser(data)
+            await this.loadSidebarSections()
+        },
+
+        async loadSidebarSections() {
+            try {
+                const { data } = await userApi.getSidebarSections()
+                this.allowedSections = data
+            } catch {
+                this.allowedSections = []
+            }
         },
 
         setUser(user: User | null) {
@@ -37,6 +47,7 @@ export const useUserStore = defineStore('user', {
 
         clearUser() {
             this.user = null
+            this.allowedSections = []
             const notificationsStore = useNotificationsStore()
             notificationsStore.disconnect()
             const chatPresenceStore = useChatPresenceStore()
@@ -46,7 +57,6 @@ export const useUserStore = defineStore('user', {
         async logout() {
             await userApi.logout()
             this.clearUser()
-
         }
     }
 })

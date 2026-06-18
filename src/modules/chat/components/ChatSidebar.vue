@@ -11,7 +11,7 @@
         <input
             v-model="searchQuery"
             type="text"
-            placeholder="Поиск людей..."
+            placeholder="Найти..."
             class="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10 transition"
             @focus="isSearchFocused = true"
         />
@@ -223,11 +223,12 @@
       </span>
     </button>
 
-    <CreateGroupChatModal
+    <NewChatModal
         v-model="isCreateGroupModalOpen"
         :all-users="allUsers"
         :current-user-id="currentUserId"
         @create-group-chat="emit('createGroupChat', $event)"
+        @start-direct-chat="emit('selectUser', $event)"
     />
   </div>
 </template>
@@ -236,7 +237,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Chat, ChatMessage, ChatUser, CreateGroupPayload } from '../types/chat'
 import ChatAvatar from './ChatAvatar.vue'
-import CreateGroupChatModal from './CreateGroupChatModal.vue'
+import NewChatModal from './NewChatModal.vue'
 
 interface SearchResult {
   user: ChatUser

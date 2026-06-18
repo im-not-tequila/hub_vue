@@ -60,16 +60,45 @@
       </template>
 
       <div class="flex items-center gap-1 ml-auto">
-        <!-- <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
-          </svg>
-        </button> -->
-        <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-          </svg>
-        </button>
+        <div v-if="chat && chat.type === 'group'" class="relative">
+          <button
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition"
+            :class="{ 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300': isGroupMenuOpen }"
+            @click.stop="isGroupMenuOpen = !isGroupMenuOpen"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+            </svg>
+          </button>
+          <div
+            v-if="isGroupMenuOpen"
+            class="absolute top-10 right-0 z-20 min-w-[180px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-1"
+            @click.stop
+          >
+            <button
+              v-if="chat.my_role === 'admin'"
+              type="button"
+              class="w-full flex items-center gap-2 text-left text-sm px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
+              @click="openGroupManageModal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+              </svg>
+              Управление чатом
+            </button>
+            <button
+              v-else
+              type="button"
+              class="w-full flex items-center gap-2 text-left text-sm px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 dark:text-red-400"
+              @click="openLeaveConfirm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+              </svg>
+              Покинуть чат
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -133,6 +162,13 @@
                 @click.stop="startForwardSelection(msg.id)"
               >
                 Переслать
+              </button>
+              <button
+                type="button"
+                class="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 dark:text-red-400"
+                @click.stop="openDeleteModal(msg)"
+              >
+                Удалить
               </button>
             </div>
 
@@ -546,6 +582,97 @@
   </Teleport>
 
   <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="deleteModal.open"
+        class="fixed inset-0 z-[95] bg-black/40 flex items-center justify-center p-4"
+        @click="closeDeleteModal"
+      >
+        <div
+          class="w-full max-w-sm rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl"
+          @click.stop
+        >
+          <div class="px-5 pt-5 pb-4">
+            <div class="flex items-start gap-3">
+              <div class="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0 pt-0.5">
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Удалить сообщение?</h4>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Это действие нельзя отменить.
+                </p>
+              </div>
+            </div>
+
+            <label
+              v-if="deleteModal.message?.sender_id === currentUserId"
+              class="mt-4 flex items-center gap-3 cursor-pointer select-none group"
+            >
+              <span
+                class="relative flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition"
+                :class="deleteModal.deleteForAll
+                  ? 'bg-red-500 border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 group-hover:border-red-400'"
+              >
+                <svg
+                  v-if="deleteModal.deleteForAll"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3 text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.25 7.312a1 1 0 0 1-1.42-.004l-3.25-3.312a1 1 0 1 1 1.43-1.4l2.54 2.587 6.54-6.594a1 1 0 0 1 1.404-.003Z" clip-rule="evenodd" />
+                </svg>
+                <input
+                  type="checkbox"
+                  class="absolute inset-0 opacity-0 cursor-pointer"
+                  v-model="deleteModal.deleteForAll"
+                />
+              </span>
+              <span class="text-sm text-gray-700 dark:text-gray-200">Удалить у всех</span>
+            </label>
+          </div>
+
+          <div class="px-5 pb-5 flex justify-end gap-2">
+            <button
+              type="button"
+              class="px-4 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              @click="closeDeleteModal"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              class="px-4 py-2 rounded-lg text-sm bg-red-500 text-white hover:bg-red-600 transition"
+              :disabled="isDeletingMessage"
+              @click="confirmDeleteMessage"
+            >
+              <span v-if="isDeletingMessage" class="flex items-center gap-1.5">
+                <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Удаление...
+              </span>
+              <span v-else>Удалить</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <Teleport to="body">
     <div
       v-if="isImageModalOpen"
       class="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
@@ -617,15 +744,89 @@
       </div>
     </div>
   </Teleport>
+
+  <GroupManageModal
+    v-if="chat && chat.type === 'group'"
+    v-model="isGroupManageModalOpen"
+    :chat="chat"
+    :current-user-id="currentUserId"
+    :all-users="allUsers"
+    @chat-updated="(c) => emit('chat-updated', c)"
+    @participants-updated="(p) => emit('participants-updated', p)"
+  />
+
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="isLeaveConfirmOpen"
+        class="fixed inset-0 z-[95] bg-black/40 flex items-center justify-center p-4"
+        @click="isLeaveConfirmOpen = false"
+      >
+        <div
+          class="w-full max-w-sm rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl"
+          @click.stop
+        >
+          <div class="px-5 pt-5 pb-4">
+            <div class="flex items-start gap-3">
+              <div class="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0 pt-0.5">
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Покинуть чат?</h4>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Вы больше не будете получать сообщения этого чата. Чтобы вернуться, вас нужно будет добавить снова.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="px-5 pb-5 flex justify-end gap-2">
+            <button
+              type="button"
+              class="px-4 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              :disabled="isLeavingChat"
+              @click="isLeaveConfirmOpen = false"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              class="px-4 py-2 rounded-lg text-sm bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50"
+              :disabled="isLeavingChat"
+              @click="leaveGroupChat"
+            >
+              <span v-if="isLeavingChat" class="flex items-center gap-1.5">
+                <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Выход...
+              </span>
+              <span v-else>Покинуть</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch, nextTick } from 'vue'
-import type { Chat, ChatAttachment, ChatMessage, ChatUser } from '../types/chat'
+import type { Chat, ChatAttachment, ChatMessage, ChatUser, ChatParticipant } from '../types/chat'
 import * as chatApi from '../api/chat.api'
 import ChatAvatar from './ChatAvatar.vue'
+import GroupManageModal from './GroupManageModal.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   chat: Chat | null
   chats: Chat[]
   messages: ChatMessage[]
@@ -633,13 +834,20 @@ const props = defineProps<{
   currentUserId: number
   hasMoreMessages: boolean
   isLoadingOlder: boolean
-}>()
+  allUsers?: ChatUser[]
+}>(), {
+  allUsers: () => [],
+})
 
 const emit = defineEmits<{
   (e: 'send', payload: { text: string; files: File[] }): void
   (e: 'forward', payload: { messageIds: number[]; targetChatIds: number[]; recipientIds: number[] }): void
+  (e: 'delete-message', payload: { messageId: number; scope: 'me' | 'everyone' }): void
   (e: 'back'): void
   (e: 'load-more'): void
+  (e: 'chat-updated', chat: Chat): void
+  (e: 'participants-updated', payload: { chatId: number; participants: ChatParticipant[] }): void
+  (e: 'left-chat', chatId: number): void
 }>()
 
 const newMessage = ref('')
@@ -677,6 +885,16 @@ const forwardRecipientSearchQuery = ref('')
 const otherRecipients = ref<ChatUser[]>([])
 const isLoadingOtherRecipients = ref(false)
 const hasLoadedOtherRecipients = ref(false)
+const deleteModal = ref<{ open: boolean; message: ChatMessage | null; deleteForAll: boolean }>({
+  open: false,
+  message: null,
+  deleteForAll: false,
+})
+const isDeletingMessage = ref(false)
+const isGroupMenuOpen = ref(false)
+const isGroupManageModalOpen = ref(false)
+const isLeaveConfirmOpen = ref(false)
+const isLeavingChat = ref(false)
 const pendingPrependSnapshot = ref<{
   scrollTop: number
   scrollHeight: number
@@ -686,6 +904,34 @@ const selectedForwardCount = computed(() => selectedForwardMessageIds.value.size
 const selectedForwardRecipientCount = computed(() => selectedForwardRecipientIds.value.size)
 const selectedForwardChatCount = computed(() => selectedForwardChatIds.value.size)
 const selectedForwardTargetCount = computed(() => selectedForwardChatCount.value + selectedForwardRecipientCount.value)
+
+function openDeleteModal(msg: ChatMessage) {
+  deleteModal.value = { open: true, message: msg, deleteForAll: false }
+  activeMessageActionsMenuId.value = null
+}
+
+function closeDeleteModal() {
+  if (isDeletingMessage.value) return
+  deleteModal.value = { open: false, message: null, deleteForAll: false }
+}
+
+async function confirmDeleteMessage() {
+  const msg = deleteModal.value.message
+  if (!msg || isDeletingMessage.value) return
+
+  const scope: 'me' | 'everyone' = deleteModal.value.deleteForAll ? 'everyone' : 'me'
+
+  isDeletingMessage.value = true
+  try {
+    await chatApi.deleteMessage(msg.id, { scope })
+    emit('delete-message', { messageId: msg.id, scope })
+    deleteModal.value = { open: false, message: null, deleteForAll: false }
+  } catch (error) {
+    console.error('Failed to delete message:', error)
+  } finally {
+    isDeletingMessage.value = false
+  }
+}
 
 function sendMessage() {
   if (!canSend.value) return
@@ -702,6 +948,31 @@ function sendMessage() {
 
 function closeMessageActionsMenu() {
   activeMessageActionsMenuId.value = null
+  isGroupMenuOpen.value = false
+}
+
+function openGroupManageModal() {
+  isGroupMenuOpen.value = false
+  isGroupManageModalOpen.value = true
+}
+
+function openLeaveConfirm() {
+  isGroupMenuOpen.value = false
+  isLeaveConfirmOpen.value = true
+}
+
+async function leaveGroupChat() {
+  if (isLeavingChat.value || !props.chat) return
+  isLeavingChat.value = true
+  try {
+    await chatApi.leaveChat(props.chat.id)
+    isLeaveConfirmOpen.value = false
+    emit('left-chat', props.chat.id)
+  } catch (e) {
+    console.error('Failed to leave chat:', e)
+  } finally {
+    isLeavingChat.value = false
+  }
 }
 
 function toggleMessageActionsMenu(messageId: number) {
@@ -1020,12 +1291,20 @@ function onEscapeKey(event: KeyboardEvent) {
     closeImageModal()
     return
   }
+  if (deleteModal.value.open) {
+    closeDeleteModal()
+    return
+  }
   if (isForwardRecipientsModalOpen.value) {
     closeForwardRecipientsModal()
     return
   }
   if (isForwardSelectionMode.value) {
     cancelForwardSelection()
+    return
+  }
+  if (isGroupMenuOpen.value) {
+    isGroupMenuOpen.value = false
     return
   }
   if (activeMessageActionsMenuId.value !== null) {
@@ -1143,6 +1422,9 @@ watch(
   () => {
     cancelForwardSelection()
     closeMessageActionsMenu()
+    isGroupMenuOpen.value = false
+    isGroupManageModalOpen.value = false
+    isLeaveConfirmOpen.value = false
     isScrolledUp.value = false
     nextTick(() => textareaRef.value?.focus())
   },

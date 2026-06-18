@@ -5,6 +5,9 @@ import type { User, Vice } from "@/types/user";
 export const getProfile = () =>
     httpClient.get<User>('/user/me')
 
+export const getSidebarSections = () =>
+    httpClient.get<string[]>('/user/me/sidebar-sections')
+
 
 export const logout = () =>
     httpClient.post('/auth/logout')

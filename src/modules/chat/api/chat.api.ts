@@ -10,6 +10,8 @@ import type {
     UpdateChatParticipantRequest,
     SendMessageRequest,
     ForwardMessageRequest,
+    DeleteMessageRequest,
+    DeleteMessageResponse,
     ChatAttachment,
     ChatParticipant,
 } from '../types/chat'
@@ -69,3 +71,9 @@ export const downloadAttachment = (url: string) =>
 
 export const markMessagesAsRead = (chatId: number) =>
     httpClient.put(`/chat/chats/${chatId}/messages/read`)
+
+export const deleteMessage = (messageId: number, data: DeleteMessageRequest) =>
+    httpClient.delete<DeleteMessageResponse>(`/chat/messages/${messageId}`, { data })
+
+export const leaveChat = (chatId: number) =>
+    httpClient.delete(`/chat/chats/${chatId}/participants/me`)

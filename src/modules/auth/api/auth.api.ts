@@ -16,3 +16,6 @@ export const ncalayerVerify = (data: NcalayerVerifyRequest) =>
 
 export const logout = () =>
     httpClient.post('/auth/logout')
+
+export const ssoLogin = (ssoToken: string) =>
+    httpClient.post('/auth/sso/login', { sso_token: ssoToken })

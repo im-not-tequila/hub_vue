@@ -1,12 +1,19 @@
 <template>
-  <div class="h-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] overflow-hidden">
+  <div
+    :class="[
+      'overflow-hidden bg-white dark:bg-white/[0.03]',
+      isStandalone
+        ? 'h-screen w-screen'
+        : 'h-full rounded-2xl border border-gray-200 dark:border-gray-800'
+    ]"
+  >
       <div class="flex h-full min-h-[500px]">
         <!-- Sidebar -->
         <div
             class="shrink-0 transition-all duration-300"
             :class="[
               selectedChatId && isMobile ? 'hidden' : 'block',
-              'w-full lg:w-[340px] lg:block'
+              'w-full lg:w-[400px] lg:block'
             ]"
         >
           <ChatSidebar
@@ -36,10 +43,15 @@
               :current-user-id="currentUserId"
               :has-more-messages="hasMoreMessages"
               :is-loading-older="isLoadingOlderMessages"
+              :all-users="users"
               @send="onSendMessage"
               @forward="onForwardMessages"
+              @delete-message="onDeleteMessage"
               @load-more="onLoadOlderMessages"
               @back="selectedChatId = null"
+              @chat-updated="onChatUpdated"
+              @participants-updated="onParticipantsUpdated"
+              @left-chat="onLeftChat"
           />
         </div>
       </div>
@@ -48,13 +60,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import ChatSidebar from '../components/ChatSidebar.vue'
 import ChatConversation from '../components/ChatConversation.vue'
 import * as chatApi from '../api/chat.api'
-import type { Chat, ChatMessage, ChatUser } from '../types/chat'
+import type { Chat, ChatMessage, ChatUser, ChatParticipant } from '../types/chat'
 import { useUserStore } from '@/stores/userStore'
 import { useChatPresenceStore } from '@/stores/chatPresenceStore'
 import { useChatWebSocket } from '../composables/useChatWebSocket'
+import { ssoLogin } from '@/modules/auth/api/auth.api'
+
+const route = useRoute()
+const router = useRouter()
+const isStandalone = computed(() => Boolean(route.meta?.standalone))
 
 const userStore = useUserStore()
 const chatPresenceStore = useChatPresenceStore()
@@ -272,6 +290,35 @@ async function onForwardMessages(payload: { messageIds: number[]; targetChatIds:
   }
 }
 
+function onDeleteMessage(payload: { messageId: number; scope: 'me' | 'everyone' }) {
+  currentMessages.value = currentMessages.value.filter(m => m.id !== payload.messageId)
+
+  const chat = chats.value.find(c => c.id === selectedChatId.value)
+  if (chat?.last_message?.id === payload.messageId) {
+    const remaining = currentMessages.value
+    chat.last_message = remaining.length > 0 ? remaining[remaining.length - 1] : null
+  }
+}
+
+function onChatUpdated(updatedChat: Chat) {
+  chats.value = chats.value.map(c => c.id === updatedChat.id ? updatedChat : c)
+}
+
+function onParticipantsUpdated(payload: { chatId: number; participants: ChatParticipant[] }) {
+  chats.value = chats.value.map(c => {
+    if (c.id !== payload.chatId) return c
+    return { ...c, participants: payload.participants }
+  })
+}
+
+function onLeftChat(chatId: number) {
+  chats.value = chats.value.filter(c => c.id !== chatId)
+  if (selectedChatId.value === chatId) {
+    selectedChatId.value = null
+    currentMessages.value = []
+  }
+}
+
 async function handleWsMessage(data: any) {
   if (data.type === 'presence_changed') {
     const userId: number = data.user_id
@@ -322,6 +369,47 @@ async function handleWsMessage(data: any) {
     return
   }
 
+  if (data.type === 'message_deleted') {
+    const messageId: number = data.message_id
+    const chatId: number = data.chat_id
+
+    if (selectedChatId.value === chatId) {
+      currentMessages.value = currentMessages.value.filter(m => m.id !== messageId)
+    }
+
+    const chat = chats.value.find(c => c.id === chatId)
+    if (chat?.last_message?.id === messageId) {
+      const remaining = currentMessages.value
+      chat.last_message = remaining.length > 0 ? remaining[remaining.length - 1] : null
+    }
+    return
+  }
+
+  if (data.type === 'participants_added' || data.type === 'participant_removed' || data.type === 'participant_left') {
+    const chatId: number = data.chat_id
+    try {
+      const { data: participants } = await chatApi.getChatParticipants(chatId)
+      chats.value = chats.value.map(c => {
+        if (c.id !== chatId) return c
+        return { ...c, participants }
+      })
+    } catch (e) {
+      console.error('Failed to reload participants:', e)
+    }
+    return
+  }
+
+  if (data.type === 'removed_from_chat') {
+    const chatId: number = data.chat_id
+    onLeftChat(chatId)
+    return
+  }
+
+  if (data.type === 'broadcast_sent') {
+    await loadChats()
+    return
+  }
+
   if (data.type !== 'new_message') return
 
   const chatId: number = data.chat_id
@@ -344,6 +432,20 @@ function checkMobile() {
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+
+  // SSO: если в URL есть ?sso=TOKEN (от PHP-проекта), обменять на куки
+  const ssoToken = route.query.sso as string | undefined
+  if (ssoToken) {
+    try {
+      await ssoLogin(ssoToken)
+      await userStore.loadUser()
+    } catch (e) {
+      console.error('SSO login failed:', e)
+    }
+    // Убираем токен из URL — он одноразовый
+    await router.replace({ ...route, query: {} })
+  }
+
   await Promise.all([loadChats(), loadUsers()])
   connectWs()
 })

@@ -51,6 +51,8 @@
         <div class="hidden min-w-[24vw] lg:block">
           <SearchBar v-model="internalSearch" />
         </div>
+
+        <BreadcrumbNav class="hidden lg:flex flex-1 min-w-0 ml-2" />
       </div>
 
       <div class="ml-auto flex items-center gap-2 lg:gap-3">
@@ -65,6 +67,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
+import BreadcrumbNav from '@/components/common/BreadcrumbNav.vue'
 import ThemeToggler from '../../common/ThemeToggler.vue'
 import SearchBar from './SearchBar.vue'
 import NotificationMenu from './notifications/views/NotificationMenu.vue'

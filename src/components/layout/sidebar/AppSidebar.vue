@@ -313,71 +313,84 @@ import {
 import BoxCubeIcon from "../../icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar.js";
 import { useChatPresenceStore } from "@/stores/chatPresenceStore";
+import { useUserStore } from "@/stores/userStore";
 
 const route = useRoute();
 const chatPresenceStore = useChatPresenceStore()
 const { unreadCount } = storeToRefs(chatPresenceStore)
+const userStore = useUserStore()
+const { allowedSections } = storeToRefs(userStore)
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu, toggleSidebar } = useSidebar();
 const openNestedSubmenuKey = ref(null);
 const isSidebarOpen = computed(() => isExpanded.value || isHovered.value || isMobileOpen.value)
 const compactUnreadCount = computed(() => (unreadCount.value > 99 ? "99+" : String(unreadCount.value)))
 
-const menuGroups = [
+const allMenuGroups = [
   {
     title: "",
     items: [
       {
+        sectionKey: "docs",
         icon: DocsIcon,
         name: "Документы",
         path: "/docs",
       },
       {
+        sectionKey: "monitoring",
         icon: UserCircleIcon,
         name: "Мониторинг персонала",
         subItems: [
           {
+            sectionKey: "monitoring_staff",
             name: "Сотрудники",
             subItems: [
-              { name: "Все сотрудники", path: "/monitoring/staff/all" },
-              { name: "Пунктуальность", path: "/monitoring/staff/punctuality" },
+              { sectionKey: "monitoring_staff_all", name: "Все сотрудники", path: "/monitoring/staff/all" },
+              { sectionKey: "monitoring_staff_punctuality", name: "Пунктуальность", path: "/monitoring/staff/punctuality" },
             ],
           },
           {
+            sectionKey: "monitoring_academic",
             name: "ППС",
             subItems: [
-              { name: "Все ППС", path: "/monitoring/academic/all" },
-              { name: "Пунктуальность", path: "/monitoring/academic/punctuality" },
+              { sectionKey: "monitoring_academic_all", name: "Все ППС", path: "/monitoring/academic/all" },
+              { sectionKey: "monitoring_academic_punctuality", name: "Пунктуальность", path: "/monitoring/academic/punctuality" },
             ],
           },
         ],
       },
       {
+        sectionKey: "visit_history",
         icon: CalenderIcon,
         name: "Журнал посещений",
         path: "/visit-history",
       },
       {
+        sectionKey: "sample_documents",
         icon: PageIcon,
         name: "Образцы документов",
         path: "/sample-documents",
       },
       {
+        sectionKey: "normative_documents",
         icon: ListIcon,
         name: "Нормативные документы",
         path: "/normative-documents",
       },
       {
+        sectionKey: "work_tabel",
         icon: TableIcon,
         name: "Рабочий табель",
         path: "/work-tabel",
       },
       {
+        sectionKey: "chat",
         icon: ChatIcon,
         name: "Чат",
         path: "/chat",
       },
       {
+        sectionKey: "events_calendar",
         icon: CalenderIcon,
         name: "Календарь событий",
         path: "/events-calendar",
@@ -385,6 +398,14 @@ const menuGroups = [
     ],
   },
 ];
+
+const menuGroups = computed(() => {
+  if (!allowedSections.value.length) return allMenuGroups;
+  return allMenuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => allowedSections.value.includes(item.sectionKey)),
+  }));
+});
 
 const isActive = (path) => route.path === path;
 const isChatItem = (item) => item.path === "/chat";
@@ -429,7 +450,7 @@ const isNestedSubmenuOpen = (groupIndex, itemIndex, subIndex, subItem) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return menuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems &&
@@ -439,7 +460,7 @@ const isAnySubmenuRouteActive = computed(() => {
 });
 
 const isSubmenuRouteActive = (groupIndex, itemIndex) => {
-  return isRouteActiveInItem(menuGroups[groupIndex].items[itemIndex]);
+  return isRouteActiveInItem(menuGroups.value[groupIndex].items[itemIndex]);
 };
 
 const isNestedSubmenuRouteActive = (subItem) => {
@@ -451,7 +472,7 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      isRouteActiveInItem(menuGroups[groupIndex].items[itemIndex]))
+      isRouteActiveInItem(menuGroups.value[groupIndex].items[itemIndex]))
   );
 };
 
@@ -463,7 +484,7 @@ watch(
     const [groupIndexRaw, itemIndexRaw] = openSubmenu.value.split("-");
     const groupIndex = Number(groupIndexRaw);
     const itemIndex = Number(itemIndexRaw);
-    const openedItem = menuGroups[groupIndex]?.items?.[itemIndex];
+    const openedItem = menuGroups.value[groupIndex]?.items?.[itemIndex];
 
     if (!openedItem?.subItems || !isRouteActiveInItem(openedItem)) {
       openSubmenu.value = null;

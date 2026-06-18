@@ -14,6 +14,8 @@ export interface ChatMessage {
     sender_id: number
     text: string | null
     is_read: boolean
+    is_deleted: boolean
+    deleted_by_user_id: number | null
     is_forwarded: boolean
     forwarded_from_message_id: number | null
     original_message_id: number | null
@@ -82,6 +84,15 @@ export interface SendMessageRequest {
 export interface ForwardMessageRequest {
     target_chat_id?: number
     recipient_id?: number
+}
+
+export interface DeleteMessageRequest {
+    scope: 'me' | 'everyone'
+}
+
+export interface DeleteMessageResponse {
+    deleted: boolean
+    scope: 'me' | 'everyone'
 }
 
 export interface MarkAsReadResponse {
