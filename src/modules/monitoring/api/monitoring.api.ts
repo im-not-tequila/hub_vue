@@ -75,6 +75,19 @@ export const exportStaffPunctualityExcel = (params: ExportPunctualityParams) =>
     responseType: 'blob',
   })
 
+export interface ExportPunctualityPeriodParams {
+  start_date: string
+  end_date: string
+  structural_subdivision_id?: number
+  search?: string
+}
+
+export const exportStaffPunctualityPeriodExcel = (params: ExportPunctualityPeriodParams) =>
+  httpClient.get('/monitoring/employees/staff/list/active/punctuality/stats/excel', {
+    params,
+    responseType: 'blob',
+  })
+
 export interface PercoStatusItem {
   id: number
   name: string | null

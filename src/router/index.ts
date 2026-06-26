@@ -26,6 +26,19 @@ const routes = [
         ],
     },
     {
+        path: '/normative-documents-standalone',
+        component: ChatStandaloneLayout,
+        meta: { requiresAuth: true },
+        children: [
+            {
+                path: '',
+                name: 'normative_documents_standalone',
+                component: () => import('@/modules/normative-documents/views/NormativeDocumentsView.vue'),
+                meta: { requiresAuth: true, standalone: true },
+            },
+        ],
+    },
+    {
         path: '/',
         component: LayoutWithBreadcrumb,
         meta: { requiresAuth: true },

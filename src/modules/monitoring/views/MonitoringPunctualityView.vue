@@ -139,7 +139,7 @@
                 :size="'sm'"
                 :start-icon="DownloadIcon"
                 :variant="'primaryGreen'"
-                :disabled="isLoading || isPunctualityExportLoading || !filteredPeriodStats.length"
+                :disabled="isLoading || isPunctualityExportLoading || !punctualityPeriodStartDate || !punctualityPeriodEndDate"
                 @click="downloadPunctualityPeriodExcel"
               >
                 {{ isPunctualityExportLoading ? 'Выгрузка...' : 'Excel' }}
@@ -213,6 +213,7 @@ import PunctualityTableStaff from '@/modules/monitoring/components/PunctualityTa
 import PunctualityPeriodTable from '@/modules/monitoring/components/PunctualityPeriodTable.vue'
 import {
   exportStaffPunctualityExcel,
+  exportStaffPunctualityPeriodExcel,
   listAcademicFirstIn,
   listActiveEmployeesPunctualityStats,
   listPercoStatuses,
@@ -569,69 +570,33 @@ async function downloadPunctualityExcel() {
   }
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
-
 async function downloadPunctualityPeriodExcel() {
   if (activeGroup.value !== 'staff' || punctualityMode.value !== 'period') return
   isPunctualityExportLoading.value = true
   try {
-    const rowsHtml = filteredPeriodStats.value.map((row) => {
-      const values = [
-        row.full_name ?? '—',
-        row.structural_subdivision_name ?? '—',
-        row.position_name ?? '—',
-        row.rate != null && Number.isFinite(row.rate) ? String(row.rate) : '—',
-        row.perco_status_name ?? '—',
-        String(row.before_shift_start_count ?? 0),
-        String(row.within_grace_period_count ?? 0),
-        String(row.late_count ?? 0),
-        String(row.no_show_count ?? 0),
-        Number.isFinite(row.working_hours) ? Number(row.working_hours).toFixed(2) : '0.00',
-      ]
-      const tds = values.map((value) => `<td>${escapeHtml(value)}</td>`).join('')
-      return `<tr>${tds}</tr>`
-    }).join('')
-    const htmlDoc = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8" /></head>
-<body>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>ФИО</th>
-        <th>Отдел</th>
-        <th>Должность</th>
-        <th>Ставка</th>
-        <th>Статус</th>
-        <th>Раньше смены</th>
-        <th>В 5 минут</th>
-        <th>Опоздания</th>
-        <th>Не приход</th>
-        <th>Часы</th>
-      </tr>
-    </thead>
-    <tbody>${rowsHtml}</tbody>
-  </table>
-</body>
-</html>`
+    const startDate = toDateString(punctualityPeriodStartDate.value)
+    const endDate = toDateString(punctualityPeriodEndDate.value)
+    if (!startDate || !endDate) return
 
-    const blob = new Blob([`\ufeff${htmlDoc}`], { type: 'application/vnd.ms-excel;charset=utf-8' })
-    const link = document.createElement('a')
-    const startDate = toDateString(punctualityPeriodStartDate.value) ?? 'start'
-    const endDate = toDateString(punctualityPeriodEndDate.value) ?? 'end'
-    link.href = URL.createObjectURL(blob)
-    link.download = `monitoring_punctuality_period_${startDate}_${endDate}.xls`
-    document.body.appendChild(link)
-    link.click()
-    URL.revokeObjectURL(link.href)
-    document.body.removeChild(link)
+    const params: {
+      start_date: string
+      end_date: string
+      structural_subdivision_id?: number
+      search?: string
+    } = {
+      start_date: startDate,
+      end_date: endDate,
+    }
+    if (periodStructuralSubdivisionFilter.value !== 'ALL') {
+      params.structural_subdivision_id = periodStructuralSubdivisionFilter.value
+    }
+    const search = (props.search ?? '').trim()
+    if (search) {
+      params.search = search
+    }
+
+    const response = await exportStaffPunctualityPeriodExcel(params)
+    downloadExcelResponse(response, `monitoring_punctuality_period_${startDate}_${endDate}.xls`)
   } finally {
     isPunctualityExportLoading.value = false
   }

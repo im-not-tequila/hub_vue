@@ -31,7 +31,14 @@
     </template>
   </Modal>
 
-  <div class="h-full rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden flex relative">
+  <div
+    :class="[
+      'overflow-hidden bg-white dark:bg-white/[0.03] flex relative',
+      isStandalone
+        ? 'h-screen w-screen'
+        : 'h-full rounded-2xl border border-gray-200 dark:border-gray-800',
+    ]"
+  >
     <aside
       class="shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] transition-all duration-300 ease-out will-change-transform"
       :class="filtersCollapsed ? 'w-0 -translate-x-full overflow-hidden p-0 border-r-0' : 'w-80 translate-x-0 p-4'"
@@ -110,9 +117,28 @@
       </div>
     </aside>
 
-    <div class="min-w-0 flex-1 flex flex-col p-4 pt-10">
+    <div class="min-w-0 flex-1 flex flex-col p-4" :class="isStandalone ? 'pt-4' : 'pt-10'">
+      <div v-if="isStandalone" class="mb-4 flex shrink-0 items-center gap-3">
+        <button
+          v-if="filtersCollapsed"
+          type="button"
+          class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          aria-label="Показать категории"
+          @click="toggleFilters"
+        >
+          Категории
+        </button>
+        <input
+          v-model="localSearch"
+          type="search"
+          placeholder="Поиск документов..."
+          class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
+        />
+        <ThemeToggler />
+      </div>
+
       <button
-        v-if="filtersCollapsed"
+        v-if="filtersCollapsed && !isStandalone"
         type="button"
         class="absolute top-0 left-0 mb-3 rounded-r-lg border-r border-b border-gray-200 bg-white px-2 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         aria-label="Показать категории"
@@ -233,7 +259,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import ComponentCard from '@/components/common/ComponentCard.vue'
+import ThemeToggler from '@/components/common/ThemeToggler.vue'
 import Loader from '@/components/layout/Loader.vue'
 import Modal from '@/components/ui/Modal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -247,8 +275,16 @@ import type {
   NormativeDocumentCategory,
   NormativeDocumentItem,
 } from '@/modules/normative-documents/types/response'
+import { ssoLogin } from '@/modules/auth/api/auth.api'
+import { useUserStore } from '@/stores/userStore'
 
 const props = defineProps<{ search?: string }>()
+
+const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
+const isStandalone = computed(() => Boolean(route.meta?.standalone))
+const localSearch = ref('')
 
 const categories = ref<NormativeDocumentCategory[]>([])
 const documents = ref<NormativeDocumentItem[]>([])
@@ -288,13 +324,24 @@ const subcategoryNameById = computed<Record<number, string>>(() => {
 })
 
 const filteredDocuments = computed(() => {
-  const query = props.search?.trim().toLowerCase()
+  const query = (isStandalone.value ? localSearch.value : props.search)?.trim().toLowerCase()
   if (!query) return documents.value
 
   return documents.value.filter((item) => item.name.toLowerCase().includes(query))
 })
 
 onMounted(async () => {
+  const ssoToken = route.query.sso as string | undefined
+  if (ssoToken) {
+    try {
+      await ssoLogin(ssoToken)
+      await userStore.loadUser()
+    } catch (e) {
+      console.error('SSO login failed:', e)
+    }
+    await router.replace({ ...route, query: {} })
+  }
+
   isInitialLoading.value = true
   try {
     const categoriesResponse = await normativeCategories('ru')
